@@ -1,0 +1,51 @@
+Bootstrap: docker
+From: centos:8
+
+#
+# Bind system folders into container folders with writing permissions
+# 1) run, exec, shell, and instance start will accept the --bind/-B command-line option to specify bind paths [:dest_in_container[:ro|rw]]
+#    -B can be repeated or the paths can be comma separated
+# 2) $SINGULARITY_BIND or $SINGULARITY_BINDPATH
+#
+#
+
+
+
+    
+%post
+
+    # Setup directory structure
+    export SANDBOX=/singularity_sandbox
+    mkdir -p $SANDBOX 
+    cd ${SANDBOX}
+      
+    #### System-wide installations
+        
+    DEBIAN_FRONTEND="noninteractive" yum install -y wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm    
+    yum update -y
+    dnf install -y 'dnf-command(config-manager)'
+    DEBIAN_FRONTEND="noninteractive"     dnf config-manager --set-enabled powertools
+
+    yum update -y 
+        
+    DEBIAN_FRONTEND="noninteractive"  yum install -y  git cmake make automake python2 python3 
+    DEBIAN_FRONTEND="noninteractive"  yum install -y  gcc-toolset-9    tzdata vim \
+    OpenImageIO-devel dcmtk-devel \
+    boost-program-options boost-test boost-filesystem boost-iostreams boost-serialization boost-timer boost-program-options boost-test boost-filesystem boost-iostreams boost-serialization boost-devel \
+
+    #hdf5-openmpi-devel petsc
+    #openmpi-devel openmpi\
+    
+    dnf groupinstall -y "Development Tools"
+
+    ##############################################################
+ 
+    
+####################################################################################
+
+# Build time not runtime but not build time
+%environment
+
+    
+%runscript    
+    alias ll='ls -lrath'

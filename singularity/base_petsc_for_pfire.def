@@ -1,0 +1,57 @@
+Bootstrap: localimage
+From: /home/sa_ac1dt/DEVELOP/INSIGNEO/PFIRE/docker-pfire/singularity/base_centos8_for_pfire.sif
+
+#
+# Bind system folders into container folders with writing permissions
+# 1) run, exec, shell, and instance start will accept the --bind/-B command-line option to specify bind paths [:dest_in_container[:ro|rw]]
+#    -B can be repeated or the paths can be comma separated
+# 2) $SINGULARITY_BIND or $SINGULARITY_BINDPATH
+#
+#
+
+    
+%post
+
+    # Setup directory structure
+    export SANDBOX=/singularity_sandbox
+    mkdir -p $SANDBOX 
+    cd ${SANDBOX}
+
+    echo "alias ll='ls -lrath'" >> /etc/profile
+    echo "alias ll='ls -lrath'" >> /etc/bashrc
+###################################################################
+    export OMPI_DIR=/opt/ompi
+    export PATH=$OMPI_DIR/bin:$PATH
+    export LD_LIBRARY_PATH=$OMPI_DIR/lib:$LD_LIBRARY_PATH
+    export MANPATH=$OMPI_DIR/share/man:$MANPATH
+
+    export PATH=$PETSC_DIR/bin:$PATH
+    export LD_LIBRARY_PATH=$PETSC_DIR/lib:$LD_LIBRARY_PATH
+    export MANPATH=$PETSC_DIR/share/man:$MANPATH
+
+    echo "Installing PETSc"
+    export PETSC_ARCH=opt
+    export PETSC_VERSION=3.10.5
+    export PETSC_DIR=/opt/petsc-${PETSC_VERSION}
+    export PETSC_URL=http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz
+
+    mkdir -p /tmp/petsc
+
+    cd /tmp/petsc
+    wget -O petsc-lite-${PETSC_VERSION}.tar.gz ${PETSC_URL}
+    cd /opt
+    tar xzf /tmp/petsc/petsc-lite-${PETSC_VERSION}.tar.gz
+    
+    DEBIAN_FRONTEND="noninteractive"  yum install -y hdf5-openmpi-devel hdf5-devel vim 
+    
+    # Compile and install
+    cd ${PETSC_DIR}
+    CC=mpicc CXX=mpicxx python2 config/configure.py --with-make-np=10  --download-f2cblaslapack \ #--download-hdf5 \
+                            --download-openmpi    --with-shared-libraries \
+                                          --with-debugging=0 \
+                                          --with-fc=0
+    make -j all
+    #make install
+      
+    
+    ##############################################################
