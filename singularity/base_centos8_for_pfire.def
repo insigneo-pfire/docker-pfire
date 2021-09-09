@@ -21,30 +21,33 @@ From: centos:8
       
     #### System-wide installations
         
-    DEBIAN_FRONTEND="noninteractive" yum install -y wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm    
+    yum install -y wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm    
     yum update -y
     dnf install -y 'dnf-command(config-manager)'
-    DEBIAN_FRONTEND="noninteractive"     dnf config-manager --set-enabled powertools
+    dnf config-manager --set-enabled powertools
 
     yum update -y 
         
-    DEBIAN_FRONTEND="noninteractive"  yum install -y  git cmake make automake python2 python3 
-    DEBIAN_FRONTEND="noninteractive"  yum install -y  gcc-toolset-9    tzdata vim \
-    OpenImageIO-devel dcmtk-devel \
+    yum install -y  git cmake make automake python2 python3 
+    yum install -y  gcc-toolset-9    tzdata vim \    
     boost-program-options boost-test boost-filesystem boost-iostreams boost-serialization boost-timer boost-program-options boost-test boost-filesystem boost-iostreams boost-serialization boost-devel \
 
+    #OpenImageIO-devel dcmtk-devel \
     #hdf5-openmpi-devel petsc
-    #openmpi-devel openmpi\
+  
+
     
     dnf groupinstall -y "Development Tools"
 
     ##############################################################
- 
+
+
+         
     
 ####################################################################################
 
 # Build time not runtime but not build time
-%environment
+
 
     
 %runscript    
