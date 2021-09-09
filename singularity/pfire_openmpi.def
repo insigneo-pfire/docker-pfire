@@ -1,0 +1,163 @@
+Bootstrap: localimage
+From: /home/sa_ac1dt/DEVELOP/INSIGNEO/PFIRE/docker-pfire/singularity/base_openmpi_petsc_for_pfire.sif
+
+# Notes fo Singularity settings
+# Bind system folders into container folders with writing permissions
+# 1) run, exec, shell, and instance start will accept the --bind/-B command-line option to specify bind paths source_system_path[:dest_in_container[:ro|rw]]
+#    -B can be repeated or the paths can be comma separated
+# 2) $SINGULARITY_BIND or $SINGULARITY_BINDPATH
+#
+# This definition file is written for Singularity version >=3.6
+
+# %files
+# 
+
+    
+%labels
+    Author d.tartarini@sheffield.ac.uk
+    Version v0.0.1
+    pFIRE 0.4.0
+        
+   
+%help
+	This container allow the execution of pFIRE (0.4.0, devel) with OpenMPI 3.xxx
+
+%setup
+	# commands here are executed on the host filesystem
+	# container FS can be referenced wih $SINGULARITY_ROOTFS
+	
+%files
+	# copies the files from host to container FS
+	# <source> [<destination>]	
+
+    
+%post
+	# Environment defined in the base image is inherited here
+    
+	export     NOW="moi"
+	echo "in post: SINGULARITY_ENVIRONMENT=$SINGULARITY_ENVIRONMENT"
+
+	# make available in environment but not visible int he %environ section
+    echo "export NOW=\"${NOW}\"" >> $SINGULARITY_ENVIRONMENT
+
+
+	echo "NOW in %post = ${NOW}"
+	
+    # Setup directory structure
+    export SANDBOX=/singularity_sandbox
+    mkdir -p $SANDBOX 
+    cd ${SANDBOX}
+
+	######################################################################################
+    HDF5_ROOT="/opt/HDF5/1.8.22/" 		
+
+    export HDF5_ROOT
+    echo "export HDF5_ROOT=\"${HDF5_ROOT}\"" >> $SINGULARITY_ENVIRONMENT
+    
+    PETSC_DIR="/opt/petsc-3.10.5/"
+    export PETSC_DIR="/opt/petsc-3.10.5/"
+    
+	export PETSC_ARCH="opt"
+	
+    export MPI_ROOT="/opt/ompi/"
+    export MPI_DIR="/opt/ompi/"
+    export CPATH="/opt/ompi/include/:$CPATH"    
+    
+	echo "export PETSC_DIR=\"${PETSC_DIR}\""   >> $SINGULARITY_ENVIRONMENT
+	echo "export PETSC_ARCH=\"${PETSC_ARCH}\"" >> $SINGULARITY_ENVIRONMENT
+    echo "export CPATH=\"\${CPATH}:${MPI_ROOT}/include\"" >> $SINGULARITY_ENVIRONMENT
+	PFIRE_ROOT="/opt/pfire"
+	
+    ######################################################################################    
+	# pFIRE
+	
+    PFIRE_VERSION="v0.4.0"
+    
+    cd ${SANDBOX}       
+    git clone -b ${PFIRE_VERSION}  https://github.com/INSIGNEO/pFIRE.git ${PFIRE_VERSION}
+    cd ${PFIRE_VERSION}
+    
+    pwd        
+    mkdir build && cd build  && cmake -DPETSC_EXECUTABLE_RUNS:BOOL=Yes -DCMAKE_INSTALL_PREFIX=${PFIRE_ROOT}/${PFIRE_VERSION} ../ && \
+    make -j  && make install && \
+    ctest -V -L serial     
+
+    mv ${PFIRE_ROOT}/${PFIRE_VERSION}/bin/pfire ${PFIRE_ROOT}/${PFIRE_VERSION}/bin/pfire_${PFIRE_VERSION}    
+  	PFIRE_PATH="${PFIRE_ROOT}/${PFIRE_VERSION}/bin/"
+  	
+    ######################################################################################     
+    PFIRE_VERSION="master"     
+
+    cd ${SANDBOX}
+       
+    git clone -b ${PFIRE_VERSION}  https://github.com/INSIGNEO/pFIRE.git ${PFIRE_VERSION}
+    cd ${PFIRE_VERSION}
+    
+    pwd        
+    mkdir build && cd build  && cmake -DPETSC_EXECUTABLE_RUNS:BOOL=Yes -DCMAKE_INSTALL_PREFIX=${PFIRE_ROOT}/${PFIRE_VERSION} ../ && \
+    make -j  && make install && \
+    ctest -V -L serial     
+     
+    mv ${PFIRE_ROOT}/${PFIRE_VERSION}/bin/pfire ${PFIRE_ROOT}/${PFIRE_VERSION}/bin/pfire_${PFIRE_VERSION}
+    
+	PFIRE_PATH="${PFIRE_PATH}:${PFIRE_ROOT}/${PFIRE_VERSION}/bin/"
+	
+	echo "export PATH=\"\${PATH}:${PFIRE_PATH}\"" >> $SINGULARITY_ENVIRONMENT
+	
+    #petsc-dev libboost-all-dev  libhdf5-openmpi-dev\      openmpi-bin  libopenmpi-dev \      #libopenimageio2.1 libopenimageio-dev libdcmtk-dev  
+    #openmpi-devel hdf5-openmpi-devel
+
+
+    ##################################################
+    # Define runtime env variables
+  	echo "export LD_LIBRARY_PATH=\"\${LD_LIBRARY_PATH}/${PETSC_DIR}/${PETSC_ARCH}/lib:${HDF5_ROOT}/lib\"" >> $SINGULARITY_ENVIRONMENT
+  	echo "export HDF5_ROOT=\"${HDF5_ROOT}\"" >> $SINGULARITY_ENVIRONMENT    
+#  	echo "export PATH=\${PATH}\"${PFIRE}\"" >> $SINGULARITY_ENVIRONMENT
+#  	echo "export PATH=\${PATH}\"${PFIRE}\"" >> $SINGULARITY_ENVIRONMENT
+#  	echo "export PATH=\${PATH}\"${PFIRE}\"" >> $SINGULARITY_ENVIRONMENT
+  	
+  	
+  	  	
+##########################################################################################
+# Declare environment variables to be visible when executed
+# host env is visible unless launched with -e
+# Environment variables can be overridden or new added launching the image with: --env MYVAR=A,MYVAR2=B
+# A file containing env variables can be passed --env-file filename; with syntax MYVAR=A
+
+%environment
+
+
+	#echo "NOW in %environment = ${NOW}"
+
+	# echo "singularity environment in %environment = $SINGULARITY_ENVIRONMENT"
+		
+	# Environment variables inherited from base images or defined here are not overwritten
+	# by host environment unless using the methods: --env, --env-file, or SINGULARITYENV_
+	
+    #export PETSC_DIR=/opt/petsc
+    # export SINGULARITY_PETSC_DIR=$PETSC_DIR
+    #export SINGULARITYENV_APPEND_PATH=$PETSC_DIR/bin
+    #export SINGULARITYENV_APPEND_LD_LIBRARY_PATH=$PETSC_DIR/lib
+
+#	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${HDF5_ROOT}/lib:${PETSC_DIR}/${PETSC_ARCH}/lib
+#	export CPATH_PATH=$CPATH:${HDF5_ROOT}/include:a${PETSC_DIR}/${PETSC_ARCH}/include
+#	export PATH=$PATH:${PFIRE_PATH}
+
+	echo "before exporting in environment PETSC_DIR=${PETSC_DIR}"
+	#export PETSC_DIR=${PETSC_DIR}
+	#export PETSC_ARCH=${PETSC_ARCH}
+    #export MPI_ROOT="/opt/ompi/"
+    #export MPI_DIR="/opt/ompi/"
+    #export CPATH="/opt/ompi/include/:$CPATH"  
+    
+    
+    
+	
+    #export SANDBOX=/singularity_sandbox
+	#export PETSC_DIR=$SANDBOX/petsc-3.10.5/
+	#export PETSC_ARCH=arch-linux2-c-debug
+	#export HDF5_ROOT=${PETSC_DIR}/${PETSC_ARCH}
+    #export MPI_HOME=${PETSC_DIR}/${PETSC_ARCH}
+    
+%runscript    
+    alias ll='ls -lrath'
