@@ -1,5 +1,5 @@
 Bootstrap: localimage
-From: /home/sa_ac1dt/DEVELOP/INSIGNEO/PFIRE/docker-pfire/singularity/base_openmpi_petsc_for_pfire.sif
+From: base_openmpi_petsc_for_pfire.sif
 
 # Notes fo Singularity settings
 # Bind system folders into container folders with writing permissions

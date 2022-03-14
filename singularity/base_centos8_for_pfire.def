@@ -28,9 +28,9 @@ From: centos:8
 
     yum update -y 
         
-    yum install -y  git cmake make automake python2 python3 
-    yum install -y  gcc-toolset-9    tzdata vim \    
-    boost-program-options boost-test boost-filesystem boost-iostreams boost-serialization boost-timer boost-program-options boost-test boost-filesystem boost-iostreams boost-serialization boost-devel \
+    yum install -y  git cmake make automake python2 python3 vim
+    yum install -y  gcc-toolset-9     vim    #tzdata 
+    yum install -y   boost-program-options boost-test boost-filesystem boost-iostreams boost-serialization boost-timer boost-program-options boost-test boost-filesystem boost-iostreams boost-serialization boost-devel 
 
     #OpenImageIO-devel dcmtk-devel \
     #hdf5-openmpi-devel petsc

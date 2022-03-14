@@ -1,5 +1,5 @@
 Bootstrap: localimage
-From: /home/sa_ac1dt/DEVELOP/INSIGNEO/PFIRE/docker-pfire/singularity/images/base_centos8_openmpi_for_pfire.sif
+From: base_centos8_openmpi_for_pfire.sif
 
 #
 # Bind system folders into container folders with writing permissions
