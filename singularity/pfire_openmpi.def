@@ -54,7 +54,7 @@ From: base_openmpi_petsc_for_pfire.sif
     export HDF5_ROOT
     echo "export HDF5_ROOT=\"${HDF5_ROOT}\"" >> $SINGULARITY_ENVIRONMENT
     
-    PETSC_DIR="/opt/petsc-3.10.5/"
+    #PETSC_DIR="/opt/petsc-3.10.5/"
     export PETSC_DIR="/opt/petsc-3.10.5/"
     
 	export PETSC_ARCH="opt"
@@ -143,7 +143,7 @@ From: base_openmpi_petsc_for_pfire.sif
 #	export CPATH_PATH=$CPATH:${HDF5_ROOT}/include:a${PETSC_DIR}/${PETSC_ARCH}/include
 #	export PATH=$PATH:${PFIRE_PATH}
 
-	echo "before exporting in environment PETSC_DIR=${PETSC_DIR}"
+	#echo "before exporting in environment PETSC_DIR=${PETSC_DIR}"
 	#export PETSC_DIR=${PETSC_DIR}
 	#export PETSC_ARCH=${PETSC_ARCH}
     #export MPI_ROOT="/opt/ompi/"
