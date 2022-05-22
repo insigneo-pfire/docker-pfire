@@ -1,5 +1,5 @@
 Bootstrap: localimage
-From: /home/sa_ac1dt/DEVELOP/INSIGNEO/PFIRE/docker-pfire/singularity/base_centos8_for_pfire.sif
+From: base_centos8_for_pfire.sif
 
 #
 # Bind system folders into container folders with writing permissions
@@ -11,13 +11,16 @@ From: /home/sa_ac1dt/DEVELOP/INSIGNEO/PFIRE/docker-pfire/singularity/base_centos
 
     
 %post
-
+    #
+    dnf -y --disablerepo '*' --enablerepo=extras swap centos-linux-repos centos-stream-repos
+    
     # Setup directory structure
     export SANDBOX=/singularity_sandbox
     mkdir -p $SANDBOX 
     cd ${SANDBOX}
 
-    echo "alias ll='ls -lrath'" >> /etc/.profile
+    837144
+    /etc/.profile
     echo "alias ll='ls -lrath'" >> /etc/.bashrc
 ###################################################################
     export OMPI_DIR=/opt/ompi
