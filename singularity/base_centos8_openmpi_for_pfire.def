@@ -20,7 +20,7 @@ From: centos:8
     cd ${SANDBOX}
       
     #### System-wide installations
-        
+    dnf -y --disablerepo '*' --enablerepo=extras swap centos-linux-repos centos-stream-repos   
     yum install -y wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm    
     yum update -y
     dnf install -y 'dnf-command(config-manager)'
@@ -46,7 +46,8 @@ From: centos:8
      
     echo "Installing OpenMPI..."
 
-
+    # Install support of omnipath
+    yum install -y rdma-core-devel libibmad-devel libpsm2 opa-basic-tools libfabric libfabric-devel libpsm2-compat libpsm2-devel
 
     export OMPI_VERSION=4.0.1
     export OMPI_DIR=/opt/ompi
@@ -58,7 +59,7 @@ From: centos:8
     cd /tmp/ompi && wget -O openmpi-$OMPI_VERSION.tar.bz2 $OMPI_URL && tar -xjf openmpi-$OMPI_VERSION.tar.bz2
  
     # Compile and install
-    cd /tmp/ompi/openmpi-$OMPI_VERSION && ./configure --prefix=$OMPI_DIR && make -j8 install
+    cd /tmp/ompi/openmpi-$OMPI_VERSION && ./configure --prefix=$OMPI_DIR --with-psm2  && make -j8 install
 
     # Set env variables so we can compile our application
     export PATH=$OMPI_DIR/bin:$PATH
