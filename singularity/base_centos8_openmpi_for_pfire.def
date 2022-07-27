@@ -64,8 +64,10 @@ From: centos:8
     export PATH=$OMPI_DIR/bin:$PATH
     export LD_LIBRARY_PATH=$OMPI_DIR/lib:$LD_LIBRARY_PATH
 
-     
-    
+    echo "export MPI_ROOT=${OMPI_ROOT}" 				   >> $SINGULARITY_ENVIRONMENT
+    echo "export MPI_DIR=${OMPI_ROOT}" 				   >> $SINGULARITY_ENVIRONMENT
+    echo "export CPATH=\"\${CPATH}:${MPI_ROOT}/include\"" >> $SINGULARITY_ENVIRONMENT
+    echo "export PATH=\"\${PATH}:$PATH}e\"" 		   >> $SINGULARITY_ENVIRONMENT  
 ####################################################################################
 
 # Build time not runtime but not build time
@@ -76,6 +78,7 @@ From: centos:8
     export PATH="$OMPI_DIR/bin:$PATH"
     export LD_LIBRARY_PATH="$OMPI_DIR/lib:$LD_LIBRARY_PATH"
     export MANPATH="$OMPI_DIR/share/man:$MANPATH"
+    
 
     
 %runscript    

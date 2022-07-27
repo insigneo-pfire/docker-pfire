@@ -1,5 +1,5 @@
-	Bootstrap: localimage
-	From: base_centos8_openmpi_for_pfire.sif
+Bootstrap: localimage
+From: base_centos8_openmpi_for_pfire.sif
 
 #
 # Bind system folders into container folders with writing permissions
@@ -20,15 +20,16 @@
     
     yum install -y python39 python39-lxml python39-numpy-doc python39-pip python39-devel  
     yum install -y  dcmtk.x86_64  dcmtk-devel.x86_64 libjpeg-turbo libjpeg-turbo-devel swig libxml2 libxml2-devel python3-libxml2 openssl openssl-devel doxygen
+    yum install -y OpenImageIO  python3-openimageio OpenImageIO-utils OpenImageIO-iv OpenImageIO-devel
     
     pip3 install --upgrade pip
-    pip3 install PyQt5==5.15.4 
-    pip3 install PyQt5-Qt5==5.15.2 
-    pip3 install PyQt5-sip==12.9.0
-    pip3 install cached-property configobj cycler decorator docutils  dpath h5py 
-    pip3 install imageio kiwisolver
-    pip3 install matplotlib networkx numpy Pillow pyparsing   
-    pip3 install python-dateutil PyWavelets PyYAML scikit-image scipy six tabulate tifffile 
+    python3 -m pip install  PyQt5==5.15.4 
+    python3 -m pip install  PyQt5-Qt5==5.15.2 
+    python3 -m pip install  PyQt5-sip==12.9.0
+    python3 -m pip install  cached-property configobj cycler decorator docutils  dpath h5py 
+    python3 -m pip install  kiwisolver
+    python3 -m pip install matplotlib networkx numpy Pillow pyparsing   
+    python3 -m pip install python-dateutil PyWavelets PyYAML scikit-image scipy six tabulate tifffile 
     
     # Setup directory structure
     export SANDBOX=/singularity_sandbox

@@ -1,5 +1,6 @@
 Bootstrap: localimage
-From: base_openmpi_petsc_for_pfire.sif
+#From: base_openmpi_petsc_for_pfire.sif
+From: test_oiio.sif
 
 # Fingerprints: add signature from bootstrap image
 
@@ -27,7 +28,7 @@ From: base_openmpi_petsc_for_pfire.sif
 %setup
 	# commands here are executed on the host filesystem
 	# container FS can be referenced wih $SINGULARITY_ROOTFS
-	mkdir ${SINGULARITY_ROOTFS}/pfire_singularity_local
+	# mkdir -p ${SINGULARITY_ROOTFS}/pfire_singularity_local
 	
 %files
 	# copies the files from host to container FS
@@ -50,26 +51,22 @@ From: base_openmpi_petsc_for_pfire.sif
     # Install system wide packages via Yum
     
     # moved in included image 
-    	# yum install -y python39 python39-lxml python39-numpy-doc python39-pip python39-devel  
-    	# yum install -y  dcmtk.x86_64  dcmtk-devel.x86_64 libjpeg-turbo libjpeg-turbo-devel swig libxml2 libxml2-devel python3-libxml2 openssl openssl-devel doxygen
-    	
-    # yum install -y wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
-    	 
+    # yum install -y python39 python39-lxml python39-numpy-doc python39-pip python39-devel  
+    # yum install -y  dcmtk.x86_64  dcmtk-devel.x86_64 libjpeg-turbo libjpeg-turbo-devel swig libxml2 libxml2-devel python3-libxml2 openssl openssl-devel doxygen   	
+    # yum install -y wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm    	 
 	# yum install -y OpenImageIO-devel.x86_64 OpenImageIO-utils.x86_64 OpenImageIO.x86_64 dcmtk.x86_64  dcmtk-devel.x86_64 swig
-    # install dependency packages only yum repoquery --requires OpenImageIO
+    # to install dependency packages only use: yum repoquery --requires OpenImageIO
 
     
     ###########################################################################
     # Create Python virtual environment and install dependencies
     
 	# python3 -m venv pyvenv3
-	
 	# source pyvenv3/bin/activate
 	
 	python3 -m pip install --upgrade pip
 	
 	pip3 --version
-	
 	python3 --version
 	
 	# echo "source pyvenv3/bin/activate" >> $SINGULARITY_ENVIRONMENT
@@ -96,6 +93,7 @@ From: base_openmpi_petsc_for_pfire.sif
 	
     # Setup directory structure
     export SANDBOX=/singularity_sandbox
+    rm -rf /singularity_sandbox
     mkdir -p $SANDBOX 
     cd ${SANDBOX}
 
@@ -149,10 +147,10 @@ From: base_openmpi_petsc_for_pfire.sif
 	 
 	# Bypass building bugs: wrong file location and CMakeFiles
 	# cp *.py lib/
-	TEMP_XDMF_BUILD=`pwd`/lib/
-	echo "export LD_LIBRARY_PATH=\"\${LD_LIBRARY_PATH}/\"${TEMP_XDMF_BUILD}" >> $SINGULARITY_ENVIRONMENT
+	# TEMP_XDMF_BUILD=`pwd`/lib/
+	# echo "export LD_LIBRARY_PATH=\"\${LD_LIBRARY_PATH}/\"${TEMP_XDMF_BUILD}" >> $SINGULARITY_ENVIRONMENT
 	  
-	#make -j ; make install
+	# make -j ; make install
 	 
 	echo "export LD_LIBRARY_PATH=${XDMF_INSTALL_DIR}/lib/:${XDMF_INSTALL_DIR}/lib64/:${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
 	echo "export CPATH=${XDMF_INSTALL_DIR}/include/:${CPATH}" >> $SINGULARITY_ENVIRONMENT
@@ -162,12 +160,17 @@ From: base_openmpi_petsc_for_pfire.sif
     ######################################################################################    
 	# Install pFIRE
 	######################################################################################
+	
+	export OPENIMAGEIO_ROOT_DIR=${OIIO_ROOT}
+	
+	# PFIRE_REPOSITORY=https://github.com/INSIGNEO/pFIRE.git
+	PFIRE_REPOSITORY=https://github.com/insigneo-pfire/pFIRE.git
+	
 	PFIRE_ROOT="/opt/pfire"
-	    
     PFIRE_VERSION="v0.4.0"
     
     cd ${SANDBOX}       
-    git clone -b ${PFIRE_VERSION}  https://github.com/INSIGNEO/pFIRE.git ${PFIRE_VERSION}
+    git clone -b ${PFIRE_VERSION}  ${PFIRE_REPOSITORY}  ${PFIRE_VERSION}
     cd ${PFIRE_VERSION}
     
     
@@ -182,7 +185,7 @@ From: base_openmpi_petsc_for_pfire.sif
     
     
     pwd        
-    mkdir build && cd build  && cmake -DPETSC_EXECUTABLE_RUNS:BOOL=Yes -DCMAKE_INSTALL_PREFIX=${PFIRE_PATH} ../ && \
+    mkdir build && cd build  && cmake -DPETSC_EXECUTABLE_RUNS:BOOL=Yes -DCMAKE_INSTALL_PREFIX=${PFIRE_PATH} -DCMAKE_CXX_STANDARD=14 ../ && \
     make   && make install && \
     ctest -V -L serial     
 
@@ -194,16 +197,16 @@ From: base_openmpi_petsc_for_pfire.sif
 
   	
     ######################################################################################     
+	# Installing
     PFIRE_VERSION="master"     
-
-    cd ${SANDBOX}
-       
-    git clone -b ${PFIRE_VERSION}  https://github.com/INSIGNEO/pFIRE.git ${PFIRE_VERSION}
-   
-    cd ${PFIRE_VERSION}
-    
     PFIRE_SOURCE_MASTER=${SANDBOX}/${PFIRE_VERSION}
     
+    cd ${SANDBOX}
+       
+    git clone -b ${PFIRE_VERSION}  ${PFIRE_REPOSITORY} ${PFIRE_VERSION}
+   
+    cd ${PFIRE_VERSION}
+        
     pwd        
     mkdir build && cd build  && cmake -DPETSC_EXECUTABLE_RUNS:BOOL=Yes -DCMAKE_INSTALL_PREFIX=${PFIRE_ROOT}/${PFIRE_VERSION} ../ && \
     make -j  && make install && \
@@ -241,31 +244,29 @@ From: base_openmpi_petsc_for_pfire.sif
 	# Install pfire-benchmarking
     # python3 setup.py install 
     
-    pip3 install ${BENCHMARKS_PATH}
-    
-    #pip3 install -r requirements.txt --user
-        
-    echo "export PYTHONPATH=${PYTHONPATH}:${BENCHMARKS_PATH}" >>  $SINGULARITY_ENVIRONMENT
-    
-    pip3 freeze
-    ls -lrt
-        
+    ##########################################################################################
+    # FIXME restore. commented to use host code for debug/coding
+    # pip3 install ${BENCHMARKS_PATH}    
+    # echo "export PYTHONPATH=${PYTHONPATH}:${BENCHMARKS_PATH}" >>  $SINGULARITY_ENVIRONMENT
+    # pip3 freeze
+    # ls -lrt
+    ##########################################################################################    
     
     # FIXME enable when merging insigneo-pfire to main repo 
     # pip3 install /singularity_sandbox/master/utils/flannel --prefix=${PFIRE_MASTER_BIN_PATH}
     # pip -r requirements.txt
      
-    #pip3 install . # --prefix=${PFIRE_MASTER_BIN_PATH}
+    # pip3 install . # --prefix=${PFIRE_MASTER_BIN_PATH}
     
     # echo "export PYTHONPATH=${PFIRE_MASTER_BIN_PATH}:\${PYTHONPATH}" >> $SINGULARITY_ENVIRONMENT
     
 
-	pip3 freeze 
+	#pip3 freeze 
     ##################################################
     # Define runtime env variables
   	echo "export LD_LIBRARY_PATH=\"\${LD_LIBRARY_PATH}/:${PETSC_DIR}/${PETSC_ARCH}/lib:${HDF5_ROOT}/lib\"" >> $SINGULARITY_ENVIRONMENT
   	echo "export HDF5_ROOT=\"${HDF5_ROOT}\"" >> $SINGULARITY_ENVIRONMENT    
-#  	echo "export PATH=\${PATH}\"${PFIRE}\"" >> $SINGULARITY_ENVIRONMENT
+	# echo "export PATH=\${PATH}\"${PFIRE}\"" >> $SINGULARITY_ENVIRONMENT
 
   	echo "PYTHONPATH=\${PYTHONPATH}"
   	echo "PATH=${PATH}"
