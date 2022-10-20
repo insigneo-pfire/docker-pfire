@@ -1,5 +1,8 @@
-Bootstrap: docker
-From: centos:8
+# base_centos8_openmpi_for_pfire.def
+# sudo singularity build -F  base_centos8_openmpi_for_pfire.sif base_centos8_openmpi_for_pfire.def
+
+Bootstrap: localimage
+From: base_centos8_for_pfire.sif
 
 #
 # Bind system folders into container folders with writing permissions
@@ -10,48 +13,41 @@ From: centos:8
 #
 
 
-
     
 %post
 
-    # Setup directory structure
-    export SANDBOX=/singularity_sandbox
-    mkdir -p $SANDBOX 
-    cd ${SANDBOX}
-      
-    #### System-wide installations
-    dnf -y --disablerepo '*' --enablerepo=extras swap centos-linux-repos centos-stream-repos   
-    yum install -y wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm    
-    yum update -y
-    dnf install -y 'dnf-command(config-manager)'
-    dnf config-manager --set-enabled powertools
 
+      
+    #########################################################################
+    # System-wide installations
+    #########################################################################
+    
     yum update -y 
         
-    yum install -y  git cmake make automake python2 python3 vim
-    yum install -y  gcc-toolset-9-gcc-gfortran  
-    # yum install -y  gcc-toolset-9    
-    yum install -y     boost-program-options boost-test boost-filesystem boost-iostreams boost-serialization boost-timer boost-program-options boost-test boost-filesystem boost-iostreams boost-serialization boost-devel \
+     
+        
+    yum install -y     boost-program-options boost-test boost-filesystem boost-iostreams boost-serialization boost-timer boost-program-options boost-test boost-filesystem boost-iostreams boost-serialization boost-devel 
 
-    #OpenImageIO-devel dcmtk-devel \
-    #hdf5-openmpi-devel petsc
-    #openmpi-devel openmpi\  tzdata 
+    # yum install -y   openmpi-devel openmpi
+    # OpenImageIO-devel dcmtk-devel hdf5-openmpi-devel petsc openmpi-devel openmpi\  tzdata 
     
-    dnf groupinstall -y "Development Tools"
+    
 
     ##############################################################
-    # yum install -y   openmpi-devel openmpi
-     
-     
-     
+    # Installing OpenMPI
+    ##############################################################
+       
     echo "Installing OpenMPI..."
 
+	export OMPI_VERSION=4.0.1
+    export OMPI_DIR=/opt/ompi
+    export OMPI_ROOT=${OMPI_DIR}
+    export OMPI_URL="https://download.open-mpi.org/release/open-mpi/v4.0/openmpi-$OMPI_VERSION.tar.bz2"
+    	
     # Install support of omnipath
     yum install -y rdma-core-devel libibmad-devel libpsm2 opa-basic-tools libfabric libfabric-devel libpsm2-compat libpsm2-devel
 
-    export OMPI_VERSION=4.0.1
-    export OMPI_DIR=/opt/ompi
-    export OMPI_URL="https://download.open-mpi.org/release/open-mpi/v4.0/openmpi-$OMPI_VERSION.tar.bz2"
+    
     mkdir -p /tmp/ompi
     mkdir -p /opt
 
@@ -65,22 +61,22 @@ From: centos:8
     export PATH=$OMPI_DIR/bin:$PATH
     export LD_LIBRARY_PATH=$OMPI_DIR/lib:$LD_LIBRARY_PATH
 
-    echo "export MPI_ROOT=${OMPI_ROOT}" 				   >> $SINGULARITY_ENVIRONMENT
-    echo "export MPI_DIR=${OMPI_ROOT}" 				   >> $SINGULARITY_ENVIRONMENT
+    echo "export MPI_ROOT=${OMPI_ROOT}" 	 		   >> $SINGULARITY_ENVIRONMENT
+    echo "export MPI_DIR=${OMPI_ROOT}" 				      >> $SINGULARITY_ENVIRONMENT
     echo "export CPATH=\"\${CPATH}:${MPI_ROOT}/include\"" >> $SINGULARITY_ENVIRONMENT
-    echo "export PATH=\"\${PATH}:$PATH}e\"" 		   >> $SINGULARITY_ENVIRONMENT  
+    echo "export PATH=\"\${PATH}:$PATH}\""  		      >> $SINGULARITY_ENVIRONMENT  
 ####################################################################################
 
-# Build time not runtime but not build time
+# environemnt variables. may be overwritten by SINGULARITY_ENVIRONMENT
 %environment
     # Point to OMPI binaries, libraries, man pages
+	export OMPI_VERSION=4.0.1
     export OMPI_DIR=/opt/ompi
-    export MPI_ROOT=${OMPI_DIR}
-    export PATH="$OMPI_DIR/bin:$PATH"
     export LD_LIBRARY_PATH="$OMPI_DIR/lib:$LD_LIBRARY_PATH"
     export MANPATH="$OMPI_DIR/share/man:$MANPATH"
     
 
     
+    
 %runscript    
-    alias ll='ls -lrath'
+    
