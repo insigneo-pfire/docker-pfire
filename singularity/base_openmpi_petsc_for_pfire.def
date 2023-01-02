@@ -51,9 +51,12 @@ From: base_centos8_openmpi_for_pfire.sif
 	
 	cd hdf5-${HDF5_VERSION}
 	
-	HDF5_ROOT="/opt/HDF5/${HDF5_VERSION}"
+	export HDF5_ROOT="/opt/HDF5/${HDF5_VERSION}"
+	
 	echo "export HDF5_ROOT=\"${HDF5_ROOT}\""   >> $SINGULARITY_ENVIRONMENT
-
+	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${HDF5_ROOT}
+	echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH"   >> $SINGULARITY_ENVIRONMENT
+	
     CC=/opt/ompi/bin/mpicc ./configure --enable-parallel --prefix=${HDF5_ROOT}
     make -j 4
     make install
@@ -107,7 +110,7 @@ From: base_centos8_openmpi_for_pfire.sif
 	echo "export CPATH=\"\${CPATH}:$PETSC_DIR/$PETSC_ARCH/include\"" >> $SINGULARITY_ENVIRONMENT
 	 
     #echo "export PATH=$PETSC_DIR/bin:\"${PATH}\""               >> $SINGULARITY_ENVIRONMENT
-    echo "export PATH=$PETSC_DIR/$PETSC_ARCH/bin:\"${PATH}\""   >> $SINGULARITY_ENVIRONMENT
+    echo "export PATH=$PETSC_DIR/$PETSC_ARCH/bin:\"${PATH}\""    >> $SINGULARITY_ENVIRONMENT
     echo "export LD_LIBRARY_PATH=$PETSC_DIR/$PETSC_ARCH/lib:\"${LD_LIBRARY_PATH}\""  >> $SINGULARITY_ENVIRONMENT
     #echo "export LD_LIBRARY_PATH=$PETSC_DIR/lib:\"${LD_LIBRARY_PATH}\""              >> $SINGULARITY_ENVIRONMENT
     
