@@ -1,7 +1,8 @@
-	Bootstrap: localimage
-	From: base_centos8_openmpi_for_pfire.sif
-
-#
+#base_openmpi_petsc_for_pfire.sif
+Bootstrap: localimage
+From: base_centos8_openmpi_for_pfire.sif
+# Generate with:
+# sudo singularity build -F base_openmpi_petsc_for_pfire.sif base_openmpi_petsc_for_pfire.def
 # Bind system folders into container folders with writing permissions
 # 1) run, exec, shell, and instance start will accept the --bind/-B command-line option to specify bind paths [:dest_in_container[:ro|rw]]
 #    -B can be repeated or the paths can be comma separated
@@ -12,23 +13,21 @@
     
 %post
 
-    # Install system wide packages and updates
-    dnf -y --disablerepo '*' --enablerepo=extras swap centos-linux-repos centos-stream-repos
-	dnf -y distro-sync
-
-    yum install -y wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+       
+    yum install -y python39 python39-lxml python39-numpy-doc python39-pip python39-devel  python2
+     
+    yum install -y swig libxml2 libxml2-devel python3-libxml2 openssl openssl-devel doxygen
     
-    yum install -y python39 python39-lxml python39-numpy-doc python39-pip python39-devel  
-    yum install -y  dcmtk.x86_64  dcmtk-devel.x86_64 libjpeg-turbo libjpeg-turbo-devel swig libxml2 libxml2-devel python3-libxml2 openssl openssl-devel doxygen
+    # danielta yum install -y OpenImageIO  python3-openimageio OpenImageIO-utils OpenImageIO-iv OpenImageIO-devel
     
     pip3 install --upgrade pip
-    pip3 install PyQt5==5.15.4 
-    pip3 install PyQt5-Qt5==5.15.2 
-    pip3 install PyQt5-sip==12.9.0
-    pip3 install cached-property configobj cycler decorator docutils  dpath h5py 
-    pip3 install imageio kiwisolver
-    pip3 install matplotlib networkx numpy Pillow pyparsing   
-    pip3 install python-dateutil PyWavelets PyYAML scikit-image scipy six tabulate tifffile 
+    python3 -m pip install  PyQt5==5.15.4 
+    python3 -m pip install  PyQt5-Qt5==5.15.2 
+    python3 -m pip install  PyQt5-sip==12.9.0
+    python3 -m pip install  cached-property configobj cycler decorator docutils  dpath h5py 
+    python3 -m pip install  kiwisolver
+    python3 -m pip install matplotlib networkx numpy Pillow pyparsing   
+    python3 -m pip install python-dateutil PyWavelets PyYAML scikit-image scipy six tabulate tifffile 
     
     # Setup directory structure
     export SANDBOX=/singularity_sandbox
@@ -52,8 +51,12 @@
 	
 	cd hdf5-${HDF5_VERSION}
 	
-	HDF5_ROOT="/opt/HDF5/${HDF5_VERSION}"
-
+	export HDF5_ROOT="/opt/HDF5/${HDF5_VERSION}"
+	
+	echo "export HDF5_ROOT=\"${HDF5_ROOT}\""   >> $SINGULARITY_ENVIRONMENT
+	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${HDF5_ROOT}
+	echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH"   >> $SINGULARITY_ENVIRONMENT
+	
     CC=/opt/ompi/bin/mpicc ./configure --enable-parallel --prefix=${HDF5_ROOT}
     make -j 4
     make install
@@ -61,16 +64,14 @@
     ###################################################################
     echo "Installing PETSc"
     
-    #export OMPI_DIR=/opt/ompi
-    #export PATH=$OMPI_DIR/bin:$PATH
-    #export LD_LIBRARY_PATH=$OMPI_DIR/lib:$LD_LIBRARY_PATH
-    #export MANPATH=$OMPI_DIR/share/man:$MANPATH
-
     export PETSC_ARCH=opt
     export PETSC_VERSION=3.10.5
     export PETSC_DIR=/opt/petsc-${PETSC_VERSION}
     export PETSC_URL=http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${PETSC_VERSION}.tar.gz
 
+	echo "export PETSC_DIR=\"${PETSC_DIR}\""   >> $SINGULARITY_ENVIRONMENT
+	echo "export PETSC_ARCH=\"${PETSC_ARCH}\"" >> $SINGULARITY_ENVIRONMENT
+	
     mkdir -p /tmp/petsc
 
     cd /tmp/petsc
@@ -81,6 +82,9 @@
     
     #yum install -y hdf5-openmpi-devel hdf5-devel vim 
     #yum install -y mpich-devel hdf5-mpich-devel hdf5-mpich vim mpich
+    
+    ls -lrat $PETSC_DIR
+    #ls -lrat $PETSC_DIR/$PETSC_ARCH/
     
     # Compile and install
     cd ${PETSC_DIR}
@@ -100,14 +104,22 @@
     
     export MPI_ROOT=${OMPI_DIR}
 
-    export PATH=$PETSC_DIR/bin:$PATH
-    export LD_LIBRARY_PATH=$PETSC_DIR/lib:$LD_LIBRARY_PATH
+	echo "MPI_ROOT=/opt/ompi/" 				              >> $SINGULARITY_ENVIRONMENT
+    echo "MPI_DIR=/opt/ompi/" 				              >> $SINGULARITY_ENVIRONMENT
+    echo "export CPATH=\"\${CPATH}:${MPI_ROOT}/include\"" >> $SINGULARITY_ENVIRONMENT
+	echo "export CPATH=\"\${CPATH}:$PETSC_DIR/$PETSC_ARCH/include\"" >> $SINGULARITY_ENVIRONMENT
+	 
+    #echo "export PATH=$PETSC_DIR/bin:\"${PATH}\""               >> $SINGULARITY_ENVIRONMENT
+    echo "export PATH=$PETSC_DIR/$PETSC_ARCH/bin:\"${PATH}\""    >> $SINGULARITY_ENVIRONMENT
+    echo "export LD_LIBRARY_PATH=$PETSC_DIR/$PETSC_ARCH/lib:\"${LD_LIBRARY_PATH}\""  >> $SINGULARITY_ENVIRONMENT
+    #echo "export LD_LIBRARY_PATH=$PETSC_DIR/lib:\"${LD_LIBRARY_PATH}\""              >> $SINGULARITY_ENVIRONMENT
+    
     export MANPATH=$PETSC_DIR/share/man:$MANPATH
 
     
     ##############################################################
 	# Configure mpich environment 
-	    # Information about the version of MPICH to use
+	# Information about the version of MPICH to use
     #export MPICH_VERSION=3.3.2
     #export MPICH_URL="http://www.mpich.org/static/downloads/$MPICH_VERSION/mpich-$MPICH_VERSION.tar.gz"
     #export MPICH_DIR=/opt/mpich
@@ -118,4 +130,3 @@
 
 
 %runscript    
-    alias ll='ls -lrath'

@@ -19,7 +19,7 @@ From: base_centos8_for_pfire.sif
     mkdir -p $SANDBOX 
     cd ${SANDBOX}
 
-    837144
+    
     /etc/.profile
     echo "alias ll='ls -lrath'" >> /etc/.bashrc
 ###################################################################
@@ -63,8 +63,9 @@ From: base_centos8_for_pfire.sif
       
     export MPI_ROOT=/opt/petsc-3.10.5/opt/
     export HDF5_ROOT=/opt/petsc-3.10.5/opt/
-    export PETSC_ARCH=opt
-    export PETSC_DIR=/opt/petsc-3.10.5/
+
+    
+    echo "export HDF5_ROOT=\"${HDF5_ROOT}\""   >> $SINGULARITY_ENVIRONMENT
     
     ##############################################################
 	# Configure mpich environment 
@@ -85,7 +86,7 @@ From: base_centos8_for_pfire.sif
 # disable python
 # /home/sa_ac1dt/DEVELOP/INSIGNEO/PFIRE/docker-pfire/singularity/singularity_sandbox/pfire_ext_libs
 
-# TODO separate build dire in oiio from its dependencies
+# TODO separate build dir in oiio from its dependencies
 export ILMBASE_ROOT=/home/sa_ac1dt/DEVELOP/INSIGNEO/PFIRE/docker-pfire/singularity/singularity_sandbox/oiio_git/build/ext/dist
 export OPENEXR_ROOT=/home/sa_ac1dt/DEVELOP/INSIGNEO/PFIRE/docker-pfire/singularity/singularity_sandbox/oiio_git/build/ext/dist
 export ILMBASE_LIBRARY_DIR=/home/sa_ac1dt/DEVELOP/INSIGNEO/PFIRE/docker-pfire/singularity/singularity_sandbox/oiio_git/build/ext/dist/lib
@@ -115,6 +116,6 @@ export LD_LIBRARY_PATH=/home/sa_ac1dt/DEVELOP/INSIGNEO/PFIRE/docker-pfire/singul
 
 export pybind11_ROOT=/home/sa_ac1dt/DEVELOP/INSIGNEO/PFIRE/docker-pfire/singularity/singularity_sandbox/oiio_git/build/ext/dist
 
-+ export pugixml_ROOT=/home/sa_ac1dt/DEVELOP/INSIGNEO/PFIRE/docker-pfire/singularity/singularity_sandbox/oiio_git/build/ext/dist
+export pugixml_ROOT=/home/sa_ac1dt/DEVELOP/INSIGNEO/PFIRE/docker-pfire/singularity/singularity_sandbox/oiio_git/build/ext/dist
 
-+ export LD_LIBRARY_PATH=/home/sa_ac1dt/DEVELOP/INSIGNEO/PFIRE/docker-pfire/singularity/singularity_sandbox/oiio_git/build/ext/dist/lib:/home/sa_ac1dt/DEVELOP/INSIGNEO/PFIRE/docker-pfire/singularity/singularity_sandbox/oiio_git/build/ext/dist/lib64:/home/sa_ac1dt/DEVELOP/INSIGNEO/PFIRE/docker-pfire/singularity/singularity_sandbox/oiio_git/build/ext/dist/lib:/home/sa_ac1dt/DEVELOP/INSIGNEO/PFIRE/docker-pfire/singularity/singularity_sandbox/pFIRE/build/openexr/build/src/:/.singularity.d/libs:/home/sa_ac1dt/DEVELOP/INSIGNEO/PFIRE/docker-pfire/singularity/singularity_sandbox/oiio_git/build/ext/dist/lib
+export LD_LIBRARY_PATH=/home/sa_ac1dt/DEVELOP/INSIGNEO/PFIRE/docker-pfire/singularity/singularity_sandbox/oiio_git/build/ext/dist/lib:/home/sa_ac1dt/DEVELOP/INSIGNEO/PFIRE/docker-pfire/singularity/singularity_sandbox/oiio_git/build/ext/dist/lib64:/home/sa_ac1dt/DEVELOP/INSIGNEO/PFIRE/docker-pfire/singularity/singularity_sandbox/oiio_git/build/ext/dist/lib:/home/sa_ac1dt/DEVELOP/INSIGNEO/PFIRE/docker-pfire/singularity/singularity_sandbox/pFIRE/build/openexr/build/src/:/.singularity.d/libs:/home/sa_ac1dt/DEVELOP/INSIGNEO/PFIRE/docker-pfire/singularity/singularity_sandbox/oiio_git/build/ext/dist/lib
