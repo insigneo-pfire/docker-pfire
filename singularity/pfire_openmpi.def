@@ -1,6 +1,5 @@
 Bootstrap: localimage
-#From: base_openmpi_petsc_for_pfire.sif
-From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
+From: base_openmpi_petsc_for_pfire.sif
 
 # Fingerprints: add signature from bootstrap image
 
@@ -28,7 +27,7 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
 %setup
 	# commands here are executed on the host filesystem
 	# container FS can be referenced wih $SINGULARITY_ROOTFS
-	# mkdir -p ${SINGULARITY_ROOTFS}/pfire_singularity_local
+	mkdir ${SINGULARITY_ROOTFS}/pfire_singularity_local
 	
 %files
 	# copies the files from host to container FS
@@ -51,36 +50,39 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
     # Install system wide packages via Yum
     
     # moved in included image 
-    # yum install -y python39 python39-lxml python39-numpy-doc python39-pip python39-devel  
-    # yum install -y  dcmtk.x86_64  dcmtk-devel.x86_64 libjpeg-turbo libjpeg-turbo-devel swig libxml2 libxml2-devel python3-libxml2 openssl openssl-devel doxygen   	
-    # yum install -y wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm    	 
+    	# yum install -y python39 python39-lxml python39-numpy-doc python39-pip python39-devel  
+    	# yum install -y  dcmtk.x86_64  dcmtk-devel.x86_64 libjpeg-turbo libjpeg-turbo-devel swig libxml2 libxml2-devel python3-libxml2 openssl openssl-devel doxygen
+    	
+    # yum install -y wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+    	 
 	# yum install -y OpenImageIO-devel.x86_64 OpenImageIO-utils.x86_64 OpenImageIO.x86_64 dcmtk.x86_64  dcmtk-devel.x86_64 swig
-    # to install dependency packages only use: yum repoquery --requires OpenImageIO
+    # install dependency packages only yum repoquery --requires OpenImageIO
 
-	#yum remove -y libjpeg-turbo
     
     ###########################################################################
     # Create Python virtual environment and install dependencies
     
 	# python3 -m venv pyvenv3
+	
 	# source pyvenv3/bin/activate
 	
-	# danielta python3 -m pip install --upgrade pip
+	python3 -m pip install --upgrade pip
 	
 	pip3 --version
+	
 	python3 --version
 	
 	# echo "source pyvenv3/bin/activate" >> $SINGULARITY_ENVIRONMENT
 	# TODO install from requirements.txt when merged to main repo
 	
-    # danielta pip3 install PyQt5==5.15.4 
-    # danielta pip3 install PyQt5-Qt5==5.15.2 
-    # danielta pip3 install PyQt5-sip==12.9.0
-    # danielta pip3 install cached-property configobj cycler decorator docutils  dpath h5py 
-    # danielta pip3 install imageio kiwisolver matplotlib networkx numpy Pillow pyparsing   
+    pip3 install PyQt5==5.15.4 
+    pip3 install PyQt5-Qt5==5.15.2 
+    pip3 install PyQt5-sip==12.9.0
+    pip3 install cached-property configobj cycler decorator docutils  dpath h5py 
+    pip3 install imageio kiwisolver matplotlib networkx numpy Pillow pyparsing   
     pip3 install python-dateutil PyWavelets PyYAML scikit-image scipy six tabulate tifffile wheel
 
-	# danielta pip3 install packaging
+	pip3 install packaging
 	  
     #--prefix=${PFIRE_MASTER_BIN_PATH}
 
@@ -94,7 +96,6 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
 	
     # Setup directory structure
     export SANDBOX=/singularity_sandbox
-    rm -rf /singularity_sandbox
     mkdir -p $SANDBOX 
     cd ${SANDBOX}
 
@@ -121,12 +122,12 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
       
     
     # Make variables visible in Singularity image
-    # echo "export HDF5_ROOT=\"${HDF5_ROOT}\""   >> $SINGULARITY_ENVIRONMENT
-	# echo "export PETSC_DIR=\"${PETSC_DIR}\""   >> $SINGULARITY_ENVIRONMENT
-	# echo "export PETSC_ARCH=\"${PETSC_ARCH}\"" >> $SINGULARITY_ENVIRONMENT
-	# echo "MPI_ROOT=/opt/ompi/" 				   >> $SINGULARITY_ENVIRONMENT
-    # echo "MPI_DIR=/opt/ompi/" 				   >> $SINGULARITY_ENVIRONMENT
-    # echo "export CPATH=\"\${CPATH}:${MPI_ROOT}/include\"" >> $SINGULARITY_ENVIRONMENT
+    echo "export HDF5_ROOT=\"${HDF5_ROOT}\""   >> $SINGULARITY_ENVIRONMENT
+	echo "export PETSC_DIR=\"${PETSC_DIR}\""   >> $SINGULARITY_ENVIRONMENT
+	echo "export PETSC_ARCH=\"${PETSC_ARCH}\"" >> $SINGULARITY_ENVIRONMENT
+	echo "MPI_ROOT=/opt/ompi/" 				   >> $SINGULARITY_ENVIRONMENT
+    echo "MPI_DIR=/opt/ompi/" 				   >> $SINGULARITY_ENVIRONMENT
+    echo "export CPATH=\"\${CPATH}:${MPI_ROOT}/include\"" >> $SINGULARITY_ENVIRONMENT
 	
 	###################################################	   
 	# Install XDMF
@@ -144,35 +145,29 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
 	# cd xdm3_python3
 	# mkdir build ; cd build
 	# cmake .. -DCMAKE_INSTALL_PREFIX=${XDMF_INSTALL_DIR} -DBUILD_SHARED_LIBS=1 -Wno-dev # TODO enable when python wrapping works -DXDMF_WRAP_PYTHON=1  
-	##-DPYTHON_INCLUDE_DIR=$(python -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())")  -DPYTHON_LIBRARY=$(python -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
+	 ##-DPYTHON_INCLUDE_DIR=$(python -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())")  -DPYTHON_LIBRARY=$(python -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
 	 
 	# Bypass building bugs: wrong file location and CMakeFiles
 	# cp *.py lib/
-	# TEMP_XDMF_BUILD=`pwd`/lib/
-	# echo "export LD_LIBRARY_PATH=\"\${LD_LIBRARY_PATH}/\"${TEMP_XDMF_BUILD}" >> $SINGULARITY_ENVIRONMENT
+	TEMP_XDMF_BUILD=`pwd`/lib/
+	echo "export LD_LIBRARY_PATH=\"\${LD_LIBRARY_PATH}/\"${TEMP_XDMF_BUILD}" >> $SINGULARITY_ENVIRONMENT
 	  
-	# make -j ; make install
+	#make -j ; make install
 	 
-	# echo "export LD_LIBRARY_PATH=${XDMF_INSTALL_DIR}/lib/:${XDMF_INSTALL_DIR}/lib64/:${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
-	# echo "export CPATH=${XDMF_INSTALL_DIR}/include/:${CPATH}" >> $SINGULARITY_ENVIRONMENT
-	# echo "export XDMF_ROOT=${XDMF_INSTALL_DIR}" >> $SINGULARITY_ENVIRONMENT
+	echo "export LD_LIBRARY_PATH=${XDMF_INSTALL_DIR}/lib/:${XDMF_INSTALL_DIR}/lib64/:${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
+	echo "export CPATH=${XDMF_INSTALL_DIR}/include/:${CPATH}" >> $SINGULARITY_ENVIRONMENT
+	echo "export XDMF_ROOT=${XDMF_INSTALL_DIR}" >> $SINGULARITY_ENVIRONMENT
 	
 	   
     ######################################################################################    
 	# Install pFIRE
 	######################################################################################
-	
-	export OPENIMAGEIO_ROOT_DIR=${OIIO_ROOT}
-	
-	# PFIRE_REPOSITORY=https://github.com/INSIGNEO/pFIRE.git
-	PFIRE_REPOSITORY=https://github.com/insigneo-pfire/pFIRE.git
-	
 	PFIRE_ROOT="/opt/pfire"
+	    
     PFIRE_VERSION="v0.4.0"
     
-    
     cd ${SANDBOX}       
-    git clone -b ${PFIRE_VERSION}  ${PFIRE_REPOSITORY}  ${PFIRE_VERSION}
+    git clone -b ${PFIRE_VERSION}  https://github.com/INSIGNEO/pFIRE.git ${PFIRE_VERSION}
     cd ${PFIRE_VERSION}
     
     
@@ -187,35 +182,32 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
     
     
     pwd        
-    # danielta mkdir build && cd build  && cmake -DBUILD_TESTS=0 -DPETSC_EXECUTABLE_RUNS:BOOL=Yes -DCMAKE_INSTALL_PREFIX=${PFIRE_PATH} -DCMAKE_CXX_STANDARD=14  -DCXX_VISIBILITY_PRESET=default -DVERBOSE=1 -DVISIBILITY_INLINES_HIDDEN=off  ../ && \
-    # danielta make   && make install && \
-    # danielta ctest -V -L serial     
+    mkdir build && cd build  && cmake -DPETSC_EXECUTABLE_RUNS:BOOL=Yes -DCMAKE_INSTALL_PREFIX=${PFIRE_PATH} ../ && \
+    make   && make install && \
+    ctest -V -L serial     
 
 	# Making v0.4.0 the pfire default binary 
-    # danielta cp ${PFIRE_PATH}/bin/pfire ${PFIRE_PATH}/bin/pfire_${PFIRE_VERSION}    
+    cp ${PFIRE_PATH}/bin/pfire ${PFIRE_PATH}/bin/pfire_${PFIRE_VERSION}    
 
 	echo "export PATH=${PFIRE_PATH}/bin/:\${PATH}" >> $SINGULARITY_ENVIRONMENT
 	
 
   	
     ######################################################################################     
-	## Installing
-    PFIRE_VERSION="test_framework_fix"     
-	
-    
+    PFIRE_VERSION="master"     
+
     cd ${SANDBOX}
        
-    git clone -b ${PFIRE_VERSION}  ${PFIRE_REPOSITORY} ${PFIRE_VERSION}
+    git clone -b ${PFIRE_VERSION}  https://github.com/INSIGNEO/pFIRE.git ${PFIRE_VERSION}
    
     cd ${PFIRE_VERSION}
-    PFIRE_SOURCE_MASTER=`pwd`
+    
+    PFIRE_SOURCE_MASTER=${SANDBOX}/${PFIRE_VERSION}
     
     pwd        
-    mkdir build && cd build  && cmake -DBUILD_TESTS=0 -DPETSC_EXECUTABLE_RUNS:BOOL=Yes  -DENABLE_OpenImageIO=1 -DENABLE_DCMTK=1 -DCMAKE_INSTALL_PREFIX=${PFIRE_ROOT}/${PFIRE_VERSION} ../ && \
-    
-    
-    make -j  && make install 
-    ctest -V -L serial     
+    mkdir build && cd build  && cmake -DPETSC_EXECUTABLE_RUNS:BOOL=Yes -DCMAKE_INSTALL_PREFIX=${PFIRE_ROOT}/${PFIRE_VERSION} ../ && \
+    make -j  && make install && \
+    # ctest -V -L serial     
      
     # Add pFIRE filename version suffix
     mv ${PFIRE_ROOT}/${PFIRE_VERSION}/bin/pfire ${PFIRE_ROOT}/${PFIRE_VERSION}/bin/pfire_${PFIRE_VERSION}
@@ -229,26 +221,8 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
 		
     #petsc-dev libboost-all-dev  libhdf5-openmpi-dev\      openmpi-bin  libopenmpi-dev \      #libopenimageio2.1 libopenimageio-dev libdcmtk-dev     #openmpi-devel hdf5-openmpi-devel
  
- 	cd ${PFIRE_SOURCE_MASTER}
- 	
-	# install benchmark    
-	python3 -m venv pyvenv3
-	source pyvenv3/bin/activate
-	
-	python3 -m pip install --upgrade pip
-	pwd
-	ls -lrat
-	 
-	cd benchmarking
 
-	pip3 install python-dateutil PyWavelets PyYAML scikit-image scipy six tabulate
 
-	pip install -r requirements.txt
-	pip install .
-	
-	# Add to container env Pythonpath to enable banchmark tests
- 	echo "export PYTHONPATH=${PFIRE_SOURCE_MASTER}/benchmarking:\${PYTHONPATH}" >> $SINGULARITY_ENVIRONMENT
-	
     ###########################################################################
     # Install regression benchmark from pFIRE Master
     # PFIRE_PATH    
@@ -259,7 +233,7 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
     pip3 install git+https://github.com/insigneo-pfire/flannel.git
  
 
-    BENCHMARKS_VERSION="test_framework_fix"
+    BENCHMARKS_VERSION="master"
     BENCHMARKS_PATH="${PFIRE_SOURCE_MASTER}/benchmarking/"
     cd ${PFIRE_SOURCE_MASTER}
  
@@ -267,29 +241,31 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
 	# Install pfire-benchmarking
     # python3 setup.py install 
     
-    ##########################################################################################
-    # FIXME restore. commented to use host code for debug/coding
-    # pip3 install ${BENCHMARKS_PATH}    
-    # echo "export PYTHONPATH=${PYTHONPATH}:${BENCHMARKS_PATH}" >>  $SINGULARITY_ENVIRONMENT
-    # pip3 freeze
-    # ls -lrt
-    ##########################################################################################    
+    pip3 install ${BENCHMARKS_PATH}
+    
+    #pip3 install -r requirements.txt --user
+        
+    echo "export PYTHONPATH=${PYTHONPATH}:${BENCHMARKS_PATH}" >>  $SINGULARITY_ENVIRONMENT
+    
+    pip3 freeze
+    ls -lrt
+        
     
     # FIXME enable when merging insigneo-pfire to main repo 
     # pip3 install /singularity_sandbox/master/utils/flannel --prefix=${PFIRE_MASTER_BIN_PATH}
     # pip -r requirements.txt
      
-    # pip3 install . # --prefix=${PFIRE_MASTER_BIN_PATH}
+    #pip3 install . # --prefix=${PFIRE_MASTER_BIN_PATH}
     
     # echo "export PYTHONPATH=${PFIRE_MASTER_BIN_PATH}:\${PYTHONPATH}" >> $SINGULARITY_ENVIRONMENT
     
 
-	#pip3 freeze 
+	pip3 freeze 
     ##################################################
     # Define runtime env variables
   	echo "export LD_LIBRARY_PATH=\"\${LD_LIBRARY_PATH}/:${PETSC_DIR}/${PETSC_ARCH}/lib:${HDF5_ROOT}/lib\"" >> $SINGULARITY_ENVIRONMENT
   	echo "export HDF5_ROOT=\"${HDF5_ROOT}\"" >> $SINGULARITY_ENVIRONMENT    
-	# echo "export PATH=\${PATH}\"${PFIRE}\"" >> $SINGULARITY_ENVIRONMENT
+#  	echo "export PATH=\${PATH}\"${PFIRE}\"" >> $SINGULARITY_ENVIRONMENT
 
   	echo "PYTHONPATH=\${PYTHONPATH}"
   	echo "PATH=${PATH}"
@@ -336,4 +312,4 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
     # export MPI_HOME=${PETSC_DIR}/${PETSC_ARCH}
     
 %runscript    
-    
+    alias ll='ls -lrath'
