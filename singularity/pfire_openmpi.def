@@ -48,17 +48,7 @@ From: base_openmpi_petsc_for_pfire.sif
 
     ###########################################################################   
     # Install system wide packages via Yum
-    
-    # moved in included image 
-    	# yum install -y python39 python39-lxml python39-numpy-doc python39-pip python39-devel  
-    	# yum install -y  dcmtk.x86_64  dcmtk-devel.x86_64 libjpeg-turbo libjpeg-turbo-devel swig libxml2 libxml2-devel python3-libxml2 openssl openssl-devel doxygen
-    	
-    # yum install -y wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
-    	 
-	# yum install -y OpenImageIO-devel.x86_64 OpenImageIO-utils.x86_64 OpenImageIO.x86_64 dcmtk.x86_64  dcmtk-devel.x86_64 swig
-    # install dependency packages only yum repoquery --requires OpenImageIO
 
-    
     ###########################################################################
     # Create Python virtual environment and install dependencies
     
@@ -110,28 +100,23 @@ From: base_openmpi_petsc_for_pfire.sif
     # Install pFIRE requirements/dependencies and configure env variables
     
     # Define environment variables
-    export HDF5_ROOT="/opt/HDF5/1.8.22/" 		
+    # export HDF5_ROOT="/opt/HDF5/1.8.22/" 		
     
     # PETSC_DIR="/opt/petsc-3.10.5/"
-    export PETSC_DIR="/opt/petsc-3.10.5/"
-	export PETSC_ARCH="opt"
+    # export PETSC_DIR="/opt/petsc-3.10.5/"
+	# export PETSC_ARCH="opt"
 	
-    export MPI_ROOT="/opt/ompi/"
-    export MPI_DIR="/opt/ompi/"
-    export CPATH="/opt/ompi/include/:$CPATH"    
+    # export MPI_ROOT="/opt/ompi/"
+    # export MPI_DIR="/opt/ompi/"
+    # export CPATH="/opt/ompi/include/:$CPATH"    
       
     
     # Make variables visible in Singularity image
-    echo "export HDF5_ROOT=\"${HDF5_ROOT}\""   >> $SINGULARITY_ENVIRONMENT
-	echo "export PETSC_DIR=\"${PETSC_DIR}\""   >> $SINGULARITY_ENVIRONMENT
-	echo "export PETSC_ARCH=\"${PETSC_ARCH}\"" >> $SINGULARITY_ENVIRONMENT
-	echo "MPI_ROOT=/opt/ompi/" 				   >> $SINGULARITY_ENVIRONMENT
-    echo "MPI_DIR=/opt/ompi/" 				   >> $SINGULARITY_ENVIRONMENT
-    echo "export CPATH=\"\${CPATH}:${MPI_ROOT}/include\"" >> $SINGULARITY_ENVIRONMENT
+
 	
 	###################################################	   
 	# Install XDMF
-    # /home/tartarini/DEVELOP/INSIGNEO/insigneo-pfire/docker-pfire/singularity/sandbox/xdmf_git_python3/xdmf/build/tests/Python
+    # .. insigneo-pfire/docker-pfire/singularity/sandbox/xdmf_git_python3/xdmf/build/tests/Python
     
     cd ${SANDBOX}
     XDMF_INSTALL_DIR="${SANDBOX}/xdmf_bin"
@@ -162,6 +147,12 @@ From: base_openmpi_petsc_for_pfire.sif
     ######################################################################################    
 	# Install pFIRE
 	######################################################################################
+	
+	# export OPENIMAGEIO_ROOT_DIR=${OIIO_ROOT}
+	
+	# PFIRE_REPOSITORY=https://github.com/INSIGNEO/pFIRE.git
+	PFIRE_REPOSITORY=https://github.com/insigneo-pfire/pFIRE.git
+
 	PFIRE_ROOT="/opt/pfire"
 	    
     PFIRE_VERSION="v0.4.0"
@@ -174,10 +165,7 @@ From: base_openmpi_petsc_for_pfire.sif
     PFIRE_PATH="${PFIRE_ROOT}/${PFIRE_VERSION}/"
     echo "PFIRE_PATH=${PFIRE_PATH}"
   	
-  	# Enabling pFIRE v0.4.0 as default version for benchmarking  tests
-  	#echo "export PATH="${PFIRE_PATH}\"\${PATH}\"" >> $SINGULARITY_ENVIRONMENT
-  	
-	
+  		
     echo "export LD_LIBRARY_PATH=\"\${LD_LIBRARY_PATH}:${PETSC_DIR}/${PETSC_ARCH}/lib:${HDF5_ROOT}/lib\"" >> $SINGULARITY_ENVIRONMENT
     
     
@@ -189,20 +177,37 @@ From: base_openmpi_petsc_for_pfire.sif
 	# Making v0.4.0 the pfire default binary 
     cp ${PFIRE_PATH}/bin/pfire ${PFIRE_PATH}/bin/pfire_${PFIRE_VERSION}    
 
+	# Enabling pFIRE v0.4.0 as default version for benchmarking  tests
 	echo "export PATH=${PFIRE_PATH}/bin/:\${PATH}" >> $SINGULARITY_ENVIRONMENT
 	
-
+	# Set library path
+	echo "export LD_LIBRARY_PATH=${PFIRE_PATH}/lib/:\${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
   	
+  	#export DCMTK_DIR=/home/tartarini/DEVELOP/INSIGNEO/insigneo-pfire/docker-pfire/singularity/fix_oiio_dcmtk/dcmtk
+  	echo "export DCMTK_DIR=/home/tartarini/DEVELOP/INSIGNEO/insigneo-pfire/docker-pfire/singularity/fix_oiio_dcmtk/dcmtk" >> $SINGULARITY_ENVIRONMENT
     ######################################################################################     
-    PFIRE_VERSION="master"     
-
+	## Installing
+    PFIRE_VERSION="test_framework_fix"
+         
+	
     cd ${SANDBOX}
        
     git clone -b ${PFIRE_VERSION}  https://github.com/INSIGNEO/pFIRE.git ${PFIRE_VERSION}
    
     cd ${PFIRE_VERSION}
+   
+    PFIRE_SOURCE_MASTER=`pwd`
     
-    PFIRE_SOURCE_MASTER=${SANDBOX}/${PFIRE_VERSION}
+    export PFIRE_DEST_DIR=${PFIRE_ROOT}/${PFIRE_VERSION}
+    pwd    
+
+       
+    
+    mkdir build && cd build  && cmake -DCMAKE_PREFIX_PATH=/usr/local/DCMTK/single_lib/ -DBUILD_TESTS=0 \
+                                      -DPETSC_EXECUTABLE_RUNS:BOOL=Yes  -DENABLE_OpenImageIO=1 -DENABLE_DCMTK=1 \
+                                      -DCMAKE_INSTALL_PREFIX=${PFIRE_ROOT}/${PFIRE_VERSION} ../ && 
+    
+    echo ${DCMTK_DIR}
     
     pwd        
     mkdir build && cd build  && cmake -DPETSC_EXECUTABLE_RUNS:BOOL=Yes -DCMAKE_INSTALL_PREFIX=${PFIRE_ROOT}/${PFIRE_VERSION} ../ && \
@@ -210,17 +215,21 @@ From: base_openmpi_petsc_for_pfire.sif
     # ctest -V -L serial     
      
     # Add pFIRE filename version suffix
-    mv ${PFIRE_ROOT}/${PFIRE_VERSION}/bin/pfire ${PFIRE_ROOT}/${PFIRE_VERSION}/bin/pfire_${PFIRE_VERSION}
+    mv ${PFIRE_DEST_DIR}/bin/pfire ${PFIRE_DEST_DIR}/bin/pfire_${PFIRE_VERSION}
     
-	PFIRE_MASTER_BIN_PATH="${PFIRE_ROOT}/${PFIRE_VERSION}/bin/"
+	PFIRE_MASTER_BIN_PATH="${PFIRE_DEST_DIR}/bin/"
 	
 	echo "PFIRE_MASTER_BIN_PATH=${PFIRE_MASTER_BIN_PATH}"
 
 	# Add to container env
 	echo "export PATH=${PFIRE_MASTER_BIN_PATH}:\${PATH}" >> $SINGULARITY_ENVIRONMENT
+	
+	# Set library path
+	echo "export LD_LIBRARY_PATH=${PFIRE_DEST_DIR}/lib/:\${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
 		
-    #petsc-dev libboost-all-dev  libhdf5-openmpi-dev\      openmpi-bin  libopenmpi-dev \      #libopenimageio2.1 libopenimageio-dev libdcmtk-dev     #openmpi-devel hdf5-openmpi-devel
+    
  
+
 
 
     ###########################################################################
@@ -269,7 +278,7 @@ From: base_openmpi_petsc_for_pfire.sif
 
   	echo "PYTHONPATH=\${PYTHONPATH}"
   	echo "PATH=${PATH}"
-  	  	
+
 ##########################################################################################
 # Declare environment variables to be visible when executed
 # host env is visible unless launched with -e
