@@ -1,0 +1,389 @@
+#base_openmpi_petsc_dcmtk_oiio_for_pfire.def
+#Bootstrap: library
+Bootstrap: localimage
+From: base_openmpi_petsc_for_pfire.sif 
+#From: base_centos8_openmpi_for_pfire.sif
+
+%environment
+
+%post    
+    
+    ###################################################	 
+    yum install -y  boost-static 
+    yum remove -y libjpeg-turbo
+	# yum install -y dcmtk dcmtk-devel
+	# yum install -y ffmpeg-devel ffmpeg  ffmpeg-libs libtiff-devel 
+	# yum install libjpeg-turbo-devel libjpeg-turbo
+	# yum install -y giflib giflib-devel qt5-qttools 
+	# yum install -y OpenEXR-libs  OpenEXR-devel libpng libpng-devel  libtiff-devel libtiff libjpeg-turbo-devel libjpeg-turbo OpenEXR-libs  OpenEXR-devel
+	# OpenImageIO-devel OpenImageIO
+		
+
+    # yum install -y python39 python39-lxml python39-numpy-doc python39-pip python39-devel  
+    # yum install -y libjpeg-turbo libjpeg-turbo-devel swig libxml2 libxml2-devel python3-libxml2 openssl openssl-devel doxygen   	
+    # yum install -y wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm    	 
+	# yum install -y OpenImageIO-devel.x86_64 OpenImageIO-utils.x86_64 OpenImageIO.x86_64 dcmtk.x86_64  dcmtk-devel.x86_64 swig
+	# petsc-dev libboost-all-dev  libhdf5-openmpi-dev\      openmpi-bin  libopenmpi-dev \      #libopenimageio2.1 libopenimageio-dev libdcmtk-dev     #openmpi-devel hdf5-openmpi-devel
+    
+    # to install dependency packages only use: yum repoquery --requires OpenImageIO
+
+
+ 	
+	###########################################################################
+	# Install OpenImageIO with its dependencies
+	
+	SANDBOX=/tmp/sandbox_oiio/
+	rm -rf /tmp/sandbox_oiio/
+	mkdir -p $SANDBOX
+	
+	export DEST_OIIO=/usr/local/oiio/
+	
+	echo "export OIIO_ROOT=${DEST_OIIO}"                 >> $SINGULARITY_ENVIRONMENT
+	echo "export OPENIMAGEIO_ROOT_DIR=${DEST_OIIO}"      >> $SINGULARITY_ENVIRONMENT
+	  
+	echo "export PATH=\"\${PATH}:${DEST_OIIO}/bin/\""   >> $SINGULARITY_ENVIRONMENT 
+	echo "export LD_LIBRARY_PATH=\"\${LD_LIBRARY_PATH}:${DEST_OIIO}/lib:${DEST_OIIO}/lib64:\"" >> $SINGULARITY_ENVIRONMENT
+	echo "export CPATH=\"\${CPATH}:${DEST_OIIO}/include/\"" >> $SINGULARITY_ENVIRONMENT
+	
+	
+	cd $SANDBOX
+		
+	git clone https://github.com/OpenImageIO/oiio.git oiio
+	cd oiio
+	
+	export OIIO_REPO_DIR=`pwd`
+	
+	cd $SANDBOX
+	mkdir build
+	cd build
+	pwd 
+	export OIIO_BUILD_DIR=`pwd` 
+		
+	#cmake ../ -DUSE_PYTHON=0  -DUSE_Qt5=0 -DUSE_OpenGL=0 -DOIIO_DOWNLOAD_MISSING_TESTDATA=1 -DBUILD_TESTING=1    -DSTOP_ON_WARNING=0 -DALWAYS_PREFER_CONFIG=1
+	#make -j 
+	#make install
+	
+	
+	export OIIO_BUILD_SCRIPTS_DIR=$OIIO_REPO_DIR/src/build-scripts/
+	
+	# Required dependencies
+	$OIIO_BUILD_SCRIPTS_DIR/build_openexr.bash
+    
+    #export OPENEXR_ROOT=$SANDBOX/oiio/build/ext/dist
+    #export OPENEXR_ROOT=/home/tartarini/DEVELOP/INSIGNEO/insigneo-pfire/docker-pfire/singularity/oiio_sandbox/oiio/build/ext/dist
+    #export ILMBASE_ROOT=/home/tartarini/DEVELOP/INSIGNEO/insigneo-pfire/docker-pfire/singularity/oiio_sandbox/oiio/build/ext/dist
+    #export OPENEXR_LIBRARY_DIR=/home/tartarini/DEVELOP/INSIGNEO/insigneo-pfire/docker-pfire/singularity/oiio_sandbox/oiio/build/ext/dist/lib
+    #export LD_LIBRARY_PATH=/home/tartarini/DEVELOP/INSIGNEO/insigneo-pfire/docker-pfire/singularity/oiio_sandbox/oiio/build/ext/dist/lib:$LD_LIBRARY_PATH
+    
+    
+	$OIIO_BUILD_SCRIPTS_DIR/build_libtiff.bash
+	#export LIBTIFF_ROOT=/home/tartarini/DEVELOP/INSIGNEO/insigneo-pfire/docker-pfire/singularity/oiio_sandbox/oiio/build/ext/dist
+	
+	# $OIIO_BUILD_SCRIPTS_DIR/build_OpenJPEG.bash
+	# export OpenJPEG_ROOT=/home/tartarini/DEVELOP/INSIGNEO/insigneo-pfire/docker-pfire/singularity/oiio_sandbox/oiio/build/ext/dist
+	# echo "export OpenJPEG_ROOT=\"/home/tartarini/DEVELOP/INSIGNEO/insigneo-pfire/docker-pfire/singularity/oiio_sandbox/oiio/build/ext/dist\"" >> $SINGULARITY_ENVIRONMENT
+	 
+	#ls -l /home/tartarini/DEVELOP/INSIGNEO/insigneo-pfire/docker-pfire/singularity/oiio_sandbox/oiio/build/ext/dist
+	 
+	#  Optional dependencies
+	 
+	$OIIO_BUILD_SCRIPTS_DIR/build_libpng.bash
+	#../src/build-scripts/build_gif.bash 
+	 
+	$OIIO_BUILD_SCRIPTS_DIR/build_libraw.bash 
+	$OIIO_BUILD_SCRIPTS_DIR/build_zlib.bash
+	#export ZLIB_ROOT=/home/tartarini/DEVELOP/INSIGNEO/insigneo-pfire/docker-pfire/singularity/oiio_sandbox/oiio/build/ext/dist
+	
+	$OIIO_BUILD_SCRIPTS_DIR/build_libjpeg-turbo.bash
+	 
+	# export JPEGTurbo_ROOT=/home/tartarini/DEVELOP/INSIGNEO/insigneo-pfire/docker-pfire/singularity/oiio_sandbox/oiio/build/ext/dist
+
+	$OIIO_BUILD_SCRIPTS_DIR/build_pugixml.bash
+    #export 	pugixml_ROOT=$DEST_OIIO/
+
+	mkdir -p  $DEST_OIIO
+			 
+	mv $OIIO_BUILD_DIR/ext/dist/* $DEST_OIIO/
+	ls -lrat $DEST_OIIO/
+
+	 
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$DEST_OIIO/lib:$DEST_OIIO/lib64/
+	
+		
+	export ILMBASE_ROOT=$DEST_OIIO/
+	export LIBTIFF_ROOT=$DEST_OIIO/
+	export LIBRAW_ROOT=$DEST_OIIO/
+
+	export OPENEXR_ROOT=$DEST_OIIO/	
+    export OPENEXR_LIBRARY_DIR=$DEST_OIIO/
+    #export OpenJPEG_ROOT=$DEST_OIIO/
+    export PNG_ROOT=$DEST_OIIO/
+	export pugixml_ROOT=$DEST_OIIO/
+	export ZLIB_ROOT=$DEST_OIIO/	    	
+    # export JPEGTurbo_ROOT=$DEST_OIIO	
+    echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$DEST_OIIO/lib:$DEST_OIIO/lib64/" >> $SINGULARITY_ENVIRONMENT
+    	
+	echo "export ILMBASE_LIBRARY_DIR=$DEST_OIIO/" >> $SINGULARITY_ENVIRONMENT
+	echo "export LIBTIFF_ROOT=$DEST_OIIO/" >> $SINGULARITY_ENVIRONMENT
+	echo "export LIBRAW_ROOT=$DEST_OIIO/" >> $SINGULARITY_ENVIRONMENT
+
+	echo "export OPENEXR_ROOT=$DEST_OIIO/" >> $SINGULARITY_ENVIRONMENT
+	echo "export OPENEXR_LIBRARY_DIR=$DEST_OIIO/" >> $SINGULARITY_ENVIRONMENT
+	
+	#echo "export OpenJPEG_ROOT=$DEST_OIIO/" >> $SINGULARITY_ENVIRONMENT
+	#echo "export JPEG_ROOT=$DEST_OIIO/" >> $SINGULARITY_ENVIRONMENT
+	
+	#echo "export JPEG_ROOT=$OpenJPEG_ROOT"  >> $SINGULARITY_ENVIRONMENT
+	
+	
+	export JPEGTurbo_ROOT=$DEST_OIIO/
+	echo "export JPEGTurbo_ROOT=$DEST_OIIO/" >> $SINGULARITY_ENVIRONMENT
+	export JPEG_ROOT=$JPEGTurbo_ROOT
+	echo "export JPEG_ROOT=$JPEG_ROOT" >> $SINGULARITY_ENVIRONMENT
+	
+	echo "export PNG_ROOT=$DEST_OIIO/" >> $SINGULARITY_ENVIRONMENT
+	echo "export pugixml_ROOT=$DEST_OIIO/" >> $SINGULARITY_ENVIRONMENT
+	echo "export ZLIB_ROOT=$DEST_OIIO/" >> $SINGULARITY_ENVIRONMENT
+	
+	#export GIF_ROOT=$DEST_OIIO/
+	
+
+
+
+	###########################################
+	## CMAKE OpenImageIO
+	
+	# cmake ../ -DUSE_PYTHON=0  -DUSE_Qt5=0 -DUSE_OpenGL=0 -DOIIO_DOWNLOAD_MISSING_TESTDATA=1 -DBUILD_TESTING=1         -DCMAKE_INSTALL_PREFIX=$DEST_OIIO
+	#-DUSELibRaw=0 -DOpenColorIO=0 -DFreetype=0  -DOpenJPEG=0 -DLibheif=0
+	
+	cd $OIIO_BUILD
+	pwd
+	
+	cmake $OIIO_REPO_DIR  -DCMAKE_PREFIX_PATH=$DEST_OIIO -DBUILD_OIIOUTIL_ONLY=0 --log-level=TRACE \
+	-DUSE_PYTHON=0  -DUSE_Qt5=0 -DUSE_OpenGL=0 -DUSE_OpenCV=0 -DUSE_Libheif=0 -DBUILD_MISSING_DEPS=1  -DBUILD_TESTING=0 \
+	-DCMAKE_INSTALL_PREFIX=$DEST_OIIO -DSTOP_ON_WARNING=0\
+	-DBOOST_ROOT=/usr/lib64 -DBUILD_SHARED_LIBS=1 #-DLINKSTATIC=1
+	
+	#-DJPEG_INCLUDE_DIR=/usr/include -DJPEG_LIBRARY=/usr/lib64/libjpeg.so.62
+
+	make -j 
+	make install
+	#	make test
+	pwd
+
+    echo "export OpenImageIO_ROOT=$DEST_OIIO/" >> $SINGULARITY_ENVIRONMENT
+    echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${DEST_OIIO}:${DEST_OIIO}/lib:${DEST_OIIO}/lib64" >> $SINGULARITY_ENVIRONMENT
+		
+	#cmake $OIIO_REPO_DIR -DEMBEDPLUGIN=1 -DBUILD_OIIOUTIL_ONLY=0 --log-level=TRACE -DUSE_PYTHON=0 -DUSE_OpenCV=0 -DUSE_Libheif=0  \
+	#          -DUSE_LibRaw=0 -DUSE_Ptex=0 -DUSE_WebP=0 -DUSE_OpenVDB=0 -DUSE_Nuke=0 -DOIIO_DOWNLOAD_MISSING_TESTDATA=0 \
+	#          -DCXX_VISIBILITY_PRESET=default -DVERBOSE=1 -DVISIBILITY_INLINES_HIDDEN=off -DBUILD_TESTING=0 --warn-unused-vars \
+	#          -DCMAKE_INSTALL_PREFIX=$DEST_OIIO	-DSTOP_ON_WARNING=0 -DALWAYS_PREFER_CONFIG=1
+	          # -DBUILD_MISSING_DEPS=1
+	#make -d -Werror=unused-variable
+	
+	
+	
+	####################################################
+	## CMAKE OpenImageIO STATIC
+	
+	cd $OIIO_BUILD
+	cd ../
+	mkdir $DEST_OIIO/static 
+	mkdir oiio_build_static
+	cd oiio_build_static
+			
+	cmake $OIIO_REPO_DIR  -DCMAKE_PREFIX_PATH=$DEST_OIIO -DBUILD_OIIOUTIL_ONLY=0 --log-level=TRACE \
+	                      -DUSE_PYTHON=0  -DUSE_Qt5=0 -DUSE_OpenGL=0 -DUSE_OpenCV=0 -DUSE_Libheif=0 -DBUILD_MISSING_DEPS=1  -DBUILD_TESTING=0 \
+	                      -DCMAKE_INSTALL_PREFIX=$DEST_OIIO/static -DSTOP_ON_WARNING=0\
+	                      -DBOOST_ROOT=/usr/lib64 -DBUILD_SHARED_LIBS=0 -DLINKSTATIC=1
+	
+	make -j 
+	make install
+	pwd
+	
+####################################################
+# notes	
+# set CMake search path
+#-DCMAKE_PREFIX_PATH=/home/tartarini/DEVELOP/INSIGNEO/insigneo-pfire/docker-pfire/singularity/fix_oiio_dcmtk/oiio/dist/lib64/cmake/OpenImageIO/OpenImageIOConfig.cmake
+#cmake -DBUILD_TESTS=0 -DPETSC_EXECUTABLE_RUNS:BOOL=Yes -DCMAKE_INSTALL_PREFIX=${PFIRE_PATH} -DCMAKE_CXX_STANDARD=14  -DCXX_VISIBILITY_PRESET=default -DVERBOSE=1 -DVISIBILITY_INLINES_HIDDEN=off  -DCMAKE_PREFIX_PATH="/home/tartarini/DEVELOP/INSIGNEO/insigneo-pfire/docker-pfire/singularity/fix_oiio_dcmtk/oiio/dist/lib64/cmake/OpenImageIO/" -DCMAKE_DISABLE_FIND_PACKAGE_DCMTK  ../v0.4.0/
+
+#-DCMAKE_DISABLE_FIND_PACKAGE_DCMTK
+#cmake  -DPETSC_EXECUTABLE_RUNS:BOOL=Yes -DCMAKE_CXX_STANDARD=14  -DCXX_VISIBILITY_PRESET=default -DVERBOSE=1 -DVISIBILITY_INLINES_HIDDEN=off  -DCMAKE_PREFIX_PATH="/home/tartarini/DEVELOP/INSIGNEO/insigneo-pfire/docker-pfire/singularity/fix_oiio_dcmtk/oiio/dist/lib64/cmake/OpenImageIO/" -DCMAKE_DISABLE_FIND_PACKAGE_DCMTK  ../v0.4.0/
+# working with -DCMAKE_PREFIX_PATH=/home/tartarini/DEVELOP/INSIGNEO/insigneo-pfire/docker-pfire/singularity/fix_oiio_dcmtk/oiio/dist/lib64/cmake/OpenImageIO/
+
+#find_package(OpenImageIO CONFIG NO_DEFAULT_PATH REQUIRED)
+###################################################################
+
+
+	
+   	####################################  
+	## DCMTK
+
+	echo "export CPATH=/usr/lib/gcc/x86_64-redhat-linux/8/include::/usr/include/c++/8:/usr/include/:/usr/include:${CPATH}"   >> SINGULARITY_ENVIRONMENT
+   	echo "LD_LIBRARY_PATH=.singularity.d/libs:usr/lib64/:/usr/lib/gcc/x86_64-redhat-linux/8/:${LD_LIBRARY_PATH}"             >> SINGULARITY_ENVIRONMENT
+
+	SANDBOX=/tmp/sandbox_oiio/
+	
+	cd ${SANDBOX}
+    rm -rf dcmtk
+    export DCMTK_SRC=${SANDBOX}/dcmtk
+    export DCMTK_BUILD=${SANDBOX}/dcmtk_build
+    
+    git clone https://github.com/DCMTK/dcmtk.git
+   
+    export DEST_DCMTK=/usr/local/DCMTK/
+    export DEST_DCMTK_single=$DEST_DCMTK/single_lib
+    export DEST_DCMTK_static=$DEST_DCMTK/static
+    export DEST_DCMTK_shared=$DEST_DCMTK/shared
+    
+    mkdir -p $DEST_DCMTK
+    mkdir -p $DEST_DCMTK_single
+    mkdir -p $DEST_DCMTK_static
+    mkdir -p $DEST_DCMTK_shared
+    
+    mkdir -p $DCMTK_BUILD
+    cd       ${DCMTK_BUILD}
+          
+    #cmake ../dcmtk -DCMAKE_INSTALL_PREFIX=`pwd`/dest_dcmtk  -DBUILD_SINGLE_SHARED_LIBRARY=1 -DDCMTK_PORTABLE_LINUX_BINARIES=1
+    
+     
+    #export DEST_DCMTK=/usr/local/DCMTK/shared_single
+    
+    #cmake ../dcmtk -DBUILD_SHARED_LIBS=1   -DDCMTK_PORTABLE_LINUX_BINARIES=1 -DCMAKE_POSITION_INDEPENDENT_CODE=1 -DDCMTK_LINK_STATIC=0 -DCMAKE_INSTALL_PREFIX=$DEST_DCMTK
+    #cmake ../dcmtk -DBUILD_SHARED_LIBS=1   -DDCMTK_PORTABLE_LINUX_BINARIES=1  -dCMAKE_CXX_FLAGS=“-fPIC” -DCMAKE_C_FLAGS=“-fPIC” -DDCMTK_LINK_STATIC=0 -DCMAKE_INSTALL_PREFIX=$DEST_DCMTK
+
+	
+	#--------------------------------------------------------------------------
+  	# Build all dcmtk in a single library
+    #--------------------------------------------------------------------------
+    
+    rm -rf   ${DCMTK_BUILD}
+    mkdir -p ${DCMTK_BUILD}
+    cd       ${DCMTK_BUILD}
+    
+    cmake  ${DCMTK_SRC}  -DBUILD_SHARED_LIBS=1 -DBUILD_SINGLE_SHARED_LIBRARY=1 \
+    		-DCMAKE_CXX_FLAGS=-fPIC -DCMAKE_C_FLAGS=-fPIC \
+    		-DCMAKE_INSTALL_PREFIX=$DEST_DCMTK_single
+
+	make -j 
+	make install
+	
+	ls -lrat $DEST_DCMTK_single
+	
+	
+	
+	export DCMTK_DIR=$DEST_DCMTK_single/lib64/cmake/dcmtk/
+        
+	echo "export LD_LIBRARY_PATH=${DEST_DCMTK_single}/lib/:${DEST_DCMTK_single}/lib64/:${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
+	echo "export DCMTK_DIR=${DCMTK_DIR}" 						>> $SINGULARITY_ENVIRONMENT
+	echo "export CPATH=${DEST_DCMTK_single}/include/:${CPATH}"  >> $SINGULARITY_ENVIRONMENT
+	
+	# BUILD_SHARED_LIBS 	 DCMTK_LINK_STATIC  	 DCMTK_PORTABLE_LINUX_BINARIES 	  BUILD_SINGLE_SHARED_LIBRARY BUILD_SHARED_LIBS
+	# -DBUILD_SHARED_LIBS=1   -DDCMTK_PORTABLE_LINUX_BINARIES=1  -DCMAKE_CXX_FLAGS=“-fPIC” -DCMAKE_C_FLAGS=“-fPIC” -DDCMTK_LINK_STATIC=0 -DCMAKE_INSTALL_PREFIX=
+
+	env
+	echo ${OpenImageIO_ROOT}
+	echo ${OpenImageIO_DIR}	
+    echo ${DCMTK_DIR}
+
+	#-------------------------------------------------------------------------- 
+	# Build static libraries
+	#--------------------------------------------------------------------------
+	
+	rm -rf   ${DCMTK_BUILD}
+    mkdir -p ${DCMTK_BUILD}
+    cd       ${DCMTK_BUILD}
+	
+    cmake  ${DCMTK_SRC}  -DBUILD_SHARED_LIBS=0  -DCMAKE_INSTALL_PREFIX=$DEST_DCMTK_static
+    
+	make -j 
+	make install
+	
+	ls -lrat $DEST_DCMTK_static
+	
+	# Set environment variables	   
+	# echo "export LD_LIBRARY_PATH=${DEST_DCMTK_static}/lib/:${DEST_DCMTK_staic}/lib64/:${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
+	# echo "export DCMTK_DIR=${DCMTK_DIR_static}" 			   >> $SINGULARITY_ENVIRONMENT
+	# echo "export CPATH=${DEST_DCMTK_static}/include/:${CPATH}" >> $SINGULARITY_ENVIRONMENT
+    
+		
+	#-------------------------------------------------------------------------- 
+	# Build shared libraries
+	#--------------------------------------------------------------------------
+	
+	cd ${SANDBOX}
+	
+	rm -rf   ${DCMTK_BUILD}
+    mkdir -p ${DCMTK_BUILD}
+    cd       ${DCMTK_BUILD}
+    
+    cmake  ${DCMTK_SRC}  -DBUILD_SHARED_LIBS=1  -DCMAKE_INSTALL_PREFIX=$DEST_DCMTK_shared
+    
+	make -j 
+	make install
+	
+	ls -lrat $DEST_DCMTK_shared
+	    
+	# echo "export LD_LIBRARY_PATH=${DEST_DCMTK_shared}/lib/:${DEST_DCMTK_shared}/lib64/:${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
+	# echo "export DCMTK_DIR=${DCMTK_DIR_shared}" >> $SINGULARITY_ENVIRONMENT
+	# echo "export CPATH=${DEST_DCMTK_shared}/include/:${CPATH}" >> $SINGULARITY_ENVIRONMENT
+    
+	
+	
+		
+	
+	###########################################################################  
+	## DCMTK OLD To remove 
+	# cd ${SANDBOX}
+    # echo "export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/.singularity.d/libs:usr/lib64/:/usr/lib/gcc/x86_64-redhat-linux/8/" >> SINGULARITY_ENVIRONMENT
+    # echo "export CPATH=/usr/lib/gcc/x86_64-redhat-linux/8/include::/usr/include/c++/8:/usr/include/:/usr/include" 		 >> SINGULARITY_ENVIRONMENT
+    
+    # git clone https://github.com/DCMTK/dcmtk.git
+   
+    # export DEST_DCMTK=/usr/local/DCMTK/
+    # mkdir dcmtk_build
+    # cd     dcmtk_build
+    
+	# cmake ../dcmtk -DCMAKE_INSTALL_PREFIX=$DEST_DCMTK -DDCMTK_PORTABLE_LINUX_BINARIES=1  -DBUILD_SINGLE_SHARED_LIBRARY=1 #-DCMAKE_PREFIX_PATH=/usr/local/oiio/ 
+	 ##/home/tartarini/DEVELOP/INSIGNEO/insigneo-pfire/docker-pfire/singularity/fix_oiio_dcmtk/dcmtk
+
+	# debug danielta dec make -j 
+	# debug danielta dec make install
+	
+	# export DCMTK_DIR=$DEST_DCMTK/lib64/cmake/dcmtk/
+    # LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$DEST_DCMTK/lib64
+    
+	#echo "export LD_LIBRARY_PATH=${DEST_DCMTK}/lib/:${DEST_DCMTK}/lib64/:${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
+	#echo "export DCMTK_DIR=${DCMTK_DIR}" >> $SINGULARITY_ENVIRONMENT
+	#echo "export CPATH=${DEST_DCMTK}/include/:${CPATH}" >> $SINGULARITY_ENVIRONMENT
+	
+	# #BUILD_SHARED_LIBS 	 DCMTK_LINK_STATIC  	 DCMTK_PORTABLE_LINUX_BINARIES 	  BUILD_SINGLE_SHARED_LIBRARY BUILD_SHARED_LIBS
+	 
+	###########################################################################
+	
+    ###################
+    # Install XDMF
+    ###################
+    
+    # cd ${SANDBOX}
+    
+    # git clone https://github.com/DCMTK/dcmtk.git
+   
+    # export DEST_DCMTK=/usr/local/DCMTK/
+    	
+    # XDMF_INSTALL_DIR="${DEST_DCMTK}"
+    
+    # wget https://gitlab.kitware.com/xdmf/xdmf/-/archive/master/xdmf-master.tar.gz
+    # tar -zxvf xdmf-master.tar.gz
+    # cd xdmf-master
+	# mkdir build ; cd build
+	# cmake .. -DCMAKE_INSTALL_PREFIX=${XDMF_INSTALL_DIR} -DBUILD_SHARED_LIBS=1 -DXDMF_WRAP_PYTHON=1 -Wno-dev -DPYTHON_INCLUDE_DIR=$(python -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())")
+	# #-DPYTHON_INCLUDE_DIR=$(python -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())")  -DPYTHON_LIBRARY=$(python -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
+	# make -j 	
+	# #echo "export XDMF_ROOT=${XDMF_INSTALL_DIR}" >> $SINGULARITY_ENVIRONMENT
+	# echo "export LD_LIBRARY_PATH=${XDMF_INSTALL_DIR}/lib/:${XDMF_INSTALL_DIR}/lib64/:${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT	
+	# echo "export CPATH=${XDMF_INSTALL_DIR}/include/:${CPATH}" >> $SINGULARITY_ENVIRONMENT
+	# echo "export XDMF_ROOT=${XDMF_INSTALL_DIR}" >> $SINGULARITY_ENVIRONMENT
+	 
+	###########################################################################	
+	
