@@ -1,5 +1,6 @@
 Bootstrap: localimage
-From: base_openmpi_petsc_for_pfire.sif
+#From: base_openmpi_petsc_for_pfire.sif
+From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
 
 # Fingerprints: add signature from bootstrap image
 
@@ -43,11 +44,137 @@ From: base_openmpi_petsc_for_pfire.sif
 	# Environment defined in the base image is inherited here
     
     # Install system wide packages and updates
-    # dnf -y --disablerepo '*' --enablerepo=extras swap centos-linux-repos centos-stream-repos
-	# dnf -y distro-sync
 
-    ###########################################################################   
-    # Install system wide packages via Yum
+	# Add shortcut for ll command
+	echo "ls -lrat \$@" > /usr/bin/ll
+	chmod +x /usr/bin/ll
+	
+	##########################
+	
+    # Setup directory structure
+    export SANDBOX=/singularity_sandbox
+    mkdir -p $SANDBOX 
+    cd ${SANDBOX}
+
+	# Directory with downloaded sources for installing dependencies
+	export DOWNLOADED_SOURCES="./sources/"
+
+	
+	######################################################################################
+    ######################################################################################
+    # Install pFIRE requirements/dependencies and configure env variables
+    
+    # Make variables visible in Singularity image
+	
+	###################################################	   
+	# Install XDMF
+    # .. insigneo-pfire/docker-pfire/singularity/sandbox/xdmf_git_python3/xdmf/build/tests/Python
+    
+    cd ${SANDBOX}
+    XDMF_INSTALL_DIR="${SANDBOX}/xdmf_bin"
+    # wget https://gitlab.kitware.com/xdmf/xdmf/-/archive/master/xdmf-master.tar.gz
+    # tar -zxvf xdmf-master.tar.gz
+    # cd xdmf-master
+    
+    # Python 3 is not yet supported in main branch
+    # git clone -b python3 https://gitlab.kitware.com/rubendibattista/xdmf.git xdm3_python3
+
+	# cd xdm3_python3
+	# mkdir build ; cd build
+	# cmake .. -DCMAKE_INSTALL_PREFIX=${XDMF_INSTALL_DIR} -DBUILD_SHARED_LIBS=1 -Wno-dev # TODO enable when python wrapping works -DXDMF_WRAP_PYTHON=1  
+	 ##-DPYTHON_INCLUDE_DIR=$(python -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())")  -DPYTHON_LIBRARY=$(python -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
+	 
+	# Bypass building bugs: wrong file location and CMakeFiles
+	# cp *.py lib/
+	TEMP_XDMF_BUILD=`pwd`/lib/
+	#echo "export LD_LIBRARY_PATH=\"\${LD_LIBRARY_PATH}/\"${TEMP_XDMF_BUILD}" >> $SINGULARITY_ENVIRONMENT
+	  
+	#make -j ; make install
+	 
+	# echo "export LD_LIBRARY_PATH=${XDMF_INSTALL_DIR}/lib/:${XDMF_INSTALL_DIR}/lib64/:${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
+	# echo "export CPATH=${XDMF_INSTALL_DIR}/include/:${CPATH}" >> $SINGULARITY_ENVIRONMENT
+	# echo "export XDMF_ROOT=${XDMF_INSTALL_DIR}" >> $SINGULARITY_ENVIRONMENT
+	
+	   
+    ######################################################################################    
+	# Install pFIRE
+	######################################################################################
+	
+	# export OPENIMAGEIO_ROOT_DIR=${OIIO_ROOT}
+	
+	# PFIRE_REPOSITORY=https://github.com/INSIGNEO/pFIRE.git
+	PFIRE_REPOSITORY=https://github.com/insigneo-pfire/pFIRE.git
+
+	PFIRE_ROOT="/opt/pfire"
+	    
+    PFIRE_VERSION="v0.4.0"
+    
+    cd ${SANDBOX}       
+    git clone -b ${PFIRE_VERSION}  https://github.com/INSIGNEO/pFIRE.git ${PFIRE_VERSION}
+    cd ${PFIRE_VERSION}
+        
+    PFIRE_PATH="${PFIRE_ROOT}/${PFIRE_VERSION}/"
+    echo "PFIRE_PATH=${PFIRE_PATH}"
+  	  	
+    pwd        
+    #mkdir build && cd build  && cmake -DPETSC_EXECUTABLE_RUNS:BOOL=Yes  -DCMAKE_INSTALL_PREFIX=${PFIRE_PATH} ../ && \
+    #make   && make install && \
+    #ctest -V -L serial     
+
+	# Making v0.4.0 the pfire default binary 
+    #cp ${PFIRE_PATH}/bin/pfire ${PFIRE_PATH}/bin/pfire_${PFIRE_VERSION}    
+
+	# Enabling pFIRE v0.4.0 as default version for benchmarking  tests
+	export PATH=${PFIRE_PATH}/bin/:${PATH}
+	#echo "export PATH=${PFIRE_PATH}/bin/:\${PATH}" >> $SINGULARITY_ENVIRONMENT
+	
+	# Set library path
+	#export LD_LIBRARY_PATH=${PFIRE_PATH}/lib/:\${LD_LIBRARY_PATH}
+	echo "export LD_LIBRARY_PATH=${PFIRE_PATH}/lib/:\${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
+  	
+    ######################################################################################     
+	## Installing main branch pFIRE or current develop
+    ######################################################################################
+    
+    PFIRE_VERSION="test_framework_fix"
+	
+    cd ${SANDBOX}
+       
+    git clone -b ${PFIRE_VERSION}  ${PFIRE_REPOSITORY} ${PFIRE_VERSION}
+   
+    cd ${PFIRE_VERSION}
+   
+    PFIRE_SOURCE_MASTER=`pwd`
+    
+    export PFIRE_DEST_DIR=${PFIRE_ROOT}/${PFIRE_VERSION}
+    pwd    
+    echo ${DCMTK_DIR}
+  
+    mkdir build && cd build  && cmake -DCMAKE_PREFIX_PATH=${DCMTK_DIR} -DBUILD_TESTS=0 \
+                                      -DPETSC_EXECUTABLE_RUNS:BOOL=Yes  -DENABLE_OpenImageIO=1 -DENABLE_DCMTK=1 \
+                                      -G"Eclipse CDT4 - Unix Makefiles" \
+                                      -DCMAKE_INSTALL_PREFIX=${PFIRE_DEST_DIR} ../ && 
+    
+ 
+    make -j  && make install && \
+    ctest -V -L serial     
+     
+    # Add pFIRE filename version suffix
+    cp ${PFIRE_DEST_DIR}/bin/pfire ${PFIRE_DEST_DIR}/bin/pfire_${PFIRE_VERSION}
+    
+	PFIRE_MASTER_BIN_PATH="${PFIRE_DEST_DIR}/bin/"
+	
+	echo "PFIRE_MASTER_BIN_PATH=${PFIRE_MASTER_BIN_PATH}"
+
+	# Add to container env
+	echo "export PATH=${PFIRE_MASTER_BIN_PATH}:${PATH}" >> $SINGULARITY_ENVIRONMENT
+	
+	# Set library path
+	echo "export LD_LIBRARY_PATH=${PFIRE_DEST_DIR}/lib/:\${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
+		
+    
+ 
+
 
     ###########################################################################
     # Create Python virtual environment and install dependencies
@@ -81,156 +208,6 @@ From: base_openmpi_petsc_for_pfire.sif
 
  	echo "PYTHONPATH=\${PYTHONPATH}"
  	echo ${PYTHONPATH}
-
-	##########################
-	
-    # Setup directory structure
-    export SANDBOX=/singularity_sandbox
-    mkdir -p $SANDBOX 
-    cd ${SANDBOX}
-
-	# Directory with downloaded sources for installing dependencies
-	export DOWNLOADED_SOURCES="./sources/"
-
-
-
-	
-	######################################################################################
-    ######################################################################################
-    # Install pFIRE requirements/dependencies and configure env variables
-    
-    # Define environment variables
-    # export HDF5_ROOT="/opt/HDF5/1.8.22/" 		
-    
-    # PETSC_DIR="/opt/petsc-3.10.5/"
-    # export PETSC_DIR="/opt/petsc-3.10.5/"
-	# export PETSC_ARCH="opt"
-	
-    # export MPI_ROOT="/opt/ompi/"
-    # export MPI_DIR="/opt/ompi/"
-    # export CPATH="/opt/ompi/include/:$CPATH"    
-      
-    
-    # Make variables visible in Singularity image
-
-	
-	###################################################	   
-	# Install XDMF
-    # .. insigneo-pfire/docker-pfire/singularity/sandbox/xdmf_git_python3/xdmf/build/tests/Python
-    
-    cd ${SANDBOX}
-    XDMF_INSTALL_DIR="${SANDBOX}/xdmf_bin"
-    # wget https://gitlab.kitware.com/xdmf/xdmf/-/archive/master/xdmf-master.tar.gz
-    # tar -zxvf xdmf-master.tar.gz
-    # cd xdmf-master
-    
-    # Python 3 is not yet supported in main branch
-    # git clone -b python3 https://gitlab.kitware.com/rubendibattista/xdmf.git xdm3_python3
-
-	# cd xdm3_python3
-	# mkdir build ; cd build
-	# cmake .. -DCMAKE_INSTALL_PREFIX=${XDMF_INSTALL_DIR} -DBUILD_SHARED_LIBS=1 -Wno-dev # TODO enable when python wrapping works -DXDMF_WRAP_PYTHON=1  
-	 ##-DPYTHON_INCLUDE_DIR=$(python -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())")  -DPYTHON_LIBRARY=$(python -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
-	 
-	# Bypass building bugs: wrong file location and CMakeFiles
-	# cp *.py lib/
-	TEMP_XDMF_BUILD=`pwd`/lib/
-	echo "export LD_LIBRARY_PATH=\"\${LD_LIBRARY_PATH}/\"${TEMP_XDMF_BUILD}" >> $SINGULARITY_ENVIRONMENT
-	  
-	#make -j ; make install
-	 
-	echo "export LD_LIBRARY_PATH=${XDMF_INSTALL_DIR}/lib/:${XDMF_INSTALL_DIR}/lib64/:${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
-	echo "export CPATH=${XDMF_INSTALL_DIR}/include/:${CPATH}" >> $SINGULARITY_ENVIRONMENT
-	echo "export XDMF_ROOT=${XDMF_INSTALL_DIR}" >> $SINGULARITY_ENVIRONMENT
-	
-	   
-    ######################################################################################    
-	# Install pFIRE
-	######################################################################################
-	
-	# export OPENIMAGEIO_ROOT_DIR=${OIIO_ROOT}
-	
-	# PFIRE_REPOSITORY=https://github.com/INSIGNEO/pFIRE.git
-	PFIRE_REPOSITORY=https://github.com/insigneo-pfire/pFIRE.git
-
-	PFIRE_ROOT="/opt/pfire"
-	    
-    PFIRE_VERSION="v0.4.0"
-    
-    cd ${SANDBOX}       
-    git clone -b ${PFIRE_VERSION}  https://github.com/INSIGNEO/pFIRE.git ${PFIRE_VERSION}
-    cd ${PFIRE_VERSION}
-    
-    
-    PFIRE_PATH="${PFIRE_ROOT}/${PFIRE_VERSION}/"
-    echo "PFIRE_PATH=${PFIRE_PATH}"
-  	
-  		
-    echo "export LD_LIBRARY_PATH=\"\${LD_LIBRARY_PATH}:${PETSC_DIR}/${PETSC_ARCH}/lib:${HDF5_ROOT}/lib\"" >> $SINGULARITY_ENVIRONMENT
-    
-    
-    pwd        
-    mkdir build && cd build  && cmake -DPETSC_EXECUTABLE_RUNS:BOOL=Yes -DCMAKE_INSTALL_PREFIX=${PFIRE_PATH} ../ && \
-    make   && make install && \
-    ctest -V -L serial     
-
-	# Making v0.4.0 the pfire default binary 
-    cp ${PFIRE_PATH}/bin/pfire ${PFIRE_PATH}/bin/pfire_${PFIRE_VERSION}    
-
-	# Enabling pFIRE v0.4.0 as default version for benchmarking  tests
-	echo "export PATH=${PFIRE_PATH}/bin/:\${PATH}" >> $SINGULARITY_ENVIRONMENT
-	
-	# Set library path
-	echo "export LD_LIBRARY_PATH=${PFIRE_PATH}/lib/:\${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
-  	
-  	#export DCMTK_DIR=/home/tartarini/DEVELOP/INSIGNEO/insigneo-pfire/docker-pfire/singularity/fix_oiio_dcmtk/dcmtk
-  	echo "export DCMTK_DIR=/home/tartarini/DEVELOP/INSIGNEO/insigneo-pfire/docker-pfire/singularity/fix_oiio_dcmtk/dcmtk" >> $SINGULARITY_ENVIRONMENT
-    ######################################################################################     
-	## Installing
-    PFIRE_VERSION="test_framework_fix"
-         
-	
-    cd ${SANDBOX}
-       
-    git clone -b ${PFIRE_VERSION}  https://github.com/INSIGNEO/pFIRE.git ${PFIRE_VERSION}
-   
-    cd ${PFIRE_VERSION}
-   
-    PFIRE_SOURCE_MASTER=`pwd`
-    
-    export PFIRE_DEST_DIR=${PFIRE_ROOT}/${PFIRE_VERSION}
-    pwd    
-
-       
-    
-    mkdir build && cd build  && cmake -DCMAKE_PREFIX_PATH=/usr/local/DCMTK/single_lib/ -DBUILD_TESTS=0 \
-                                      -DPETSC_EXECUTABLE_RUNS:BOOL=Yes  -DENABLE_OpenImageIO=1 -DENABLE_DCMTK=1 \
-                                      -DCMAKE_INSTALL_PREFIX=${PFIRE_ROOT}/${PFIRE_VERSION} ../ && 
-    
-    echo ${DCMTK_DIR}
-    
-    pwd        
-    mkdir build && cd build  && cmake -DPETSC_EXECUTABLE_RUNS:BOOL=Yes -DCMAKE_INSTALL_PREFIX=${PFIRE_ROOT}/${PFIRE_VERSION} ../ && \
-    make -j  && make install && \
-    # ctest -V -L serial     
-     
-    # Add pFIRE filename version suffix
-    mv ${PFIRE_DEST_DIR}/bin/pfire ${PFIRE_DEST_DIR}/bin/pfire_${PFIRE_VERSION}
-    
-	PFIRE_MASTER_BIN_PATH="${PFIRE_DEST_DIR}/bin/"
-	
-	echo "PFIRE_MASTER_BIN_PATH=${PFIRE_MASTER_BIN_PATH}"
-
-	# Add to container env
-	echo "export PATH=${PFIRE_MASTER_BIN_PATH}:\${PATH}" >> $SINGULARITY_ENVIRONMENT
-	
-	# Set library path
-	echo "export LD_LIBRARY_PATH=${PFIRE_DEST_DIR}/lib/:\${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
-		
-    
- 
-
-
 
     ###########################################################################
     # Install regression benchmark from pFIRE Master
@@ -272,8 +249,7 @@ From: base_openmpi_petsc_for_pfire.sif
 	pip3 freeze 
     ##################################################
     # Define runtime env variables
-  	echo "export LD_LIBRARY_PATH=\"\${LD_LIBRARY_PATH}/:${PETSC_DIR}/${PETSC_ARCH}/lib:${HDF5_ROOT}/lib\"" >> $SINGULARITY_ENVIRONMENT
-  	echo "export HDF5_ROOT=\"${HDF5_ROOT}\"" >> $SINGULARITY_ENVIRONMENT    
+  	  	    
 #  	echo "export PATH=\${PATH}\"${PFIRE}\"" >> $SINGULARITY_ENVIRONMENT
 
   	echo "PYTHONPATH=\${PYTHONPATH}"
@@ -322,3 +298,11 @@ From: base_openmpi_petsc_for_pfire.sif
     
 %runscript    
     alias ll='ls -lrath'
+
+%startscript
+
+	
+%test
+
+
+    
