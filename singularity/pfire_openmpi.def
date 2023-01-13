@@ -52,7 +52,7 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
 	##########################
 	
     # Setup directory structure
-    export SANDBOX=/singularity_sandbox
+    export SANDBOX=/tmp/singularity_sandbox
     mkdir -p $SANDBOX 
     cd ${SANDBOX}
 
@@ -297,7 +297,7 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
     # export MPI_HOME=${PETSC_DIR}/${PETSC_ARCH}
     
 %runscript    
-    alias ll='ls -lrath'
+
 
 %startscript
 
