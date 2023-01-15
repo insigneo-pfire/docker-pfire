@@ -1,0 +1,321 @@
+Bootstrap: localimage
+#From: base_openmpi_petsc_for_pfire.sif
+From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
+
+# Fingerprints: add signature from bootstrap image
+
+# Notes fo Singularity settings
+# Bind system folders into container folders with writing permissions
+# 1) run, exec, shell, and instance start will accept the --bind/-B command-line option to specify bind paths source_system_path[:dest_in_container[:ro|rw]]
+#    -B can be repeated or the paths can be comma separated
+# 2) $SINGULARITY_BIND or $SINGULARITY_BINDPATH
+#
+# This definition file is written for Singularity version >=3.6
+
+# %files
+# 
+
+    
+%labels
+    Author d.tartarini@sheffield.ac.uk
+    Version v0.0.1
+    pFIRE 0.4.0
+        
+   
+%help
+	This container allow the execution of pFIRE (0.4.0, devel) with OpenMPI 3.xxx
+
+%setup
+	# commands here are executed on the host filesystem
+	# container FS can be referenced wih $SINGULARITY_ROOTFS
+	mkdir ${SINGULARITY_ROOTFS}/pfire_singularity_local
+	
+%files
+	# copies the files from host to container FS
+	# <source> [<destination>]
+
+
+#######################################################################################################################
+# Code in runscript is executed with singularity run command or by executing the container directly as a command.
+#
+%runscript    
+
+    echo "Arguments received: $*"
+    exec echo "$@"
+
+#######################################################################################################################
+# executed when the instance start command is issued
+#   
+ 
+%startscript
+	
+
+#######################################################################################################################
+#
+
+%test
+	# executes a sdcript to validate the container at the end of the building process
+   
+####################################################################################################################### 
+%post
+	# Environment defined in the base image is inherited here
+    
+    # Install system wide packages and updates
+
+	# Add shortcut for ll command
+	echo "ls -lrat \$@" > /usr/bin/ll
+	chmod +x /usr/bin/ll
+	
+	##########################
+	
+    # Setup directory structure
+    export SANDBOX=/tmp/singularity_sandbox
+    mkdir -p $SANDBOX 
+    cd ${SANDBOX}
+
+	# Directory with downloaded sources for installing dependencies
+	# export DOWNLOADED_SOURCES="./sources/"
+
+	
+	######################################################################################
+    ######################################################################################
+    # Install pFIRE requirements/dependencies and configure env variables
+    
+    # Make variables visible in Singularity image
+	
+	###################################################	   
+	# Install XDMF
+    # .. insigneo-pfire/docker-pfire/singularity/sandbox/xdmf_git_python3/xdmf/build/tests/Python
+    
+    cd ${SANDBOX}
+    XDMF_INSTALL_DIR="${SANDBOX}/xdmf_bin"
+    # wget https://gitlab.kitware.com/xdmf/xdmf/-/archive/master/xdmf-master.tar.gz
+    # tar -zxvf xdmf-master.tar.gz
+    # cd xdmf-master
+    
+    # Python 3 is not yet supported in main branch
+    # git clone -b python3 https://gitlab.kitware.com/rubendibattista/xdmf.git xdm3_python3
+
+	# cd xdm3_python3
+	# mkdir build ; cd build
+	# cmake .. -DCMAKE_INSTALL_PREFIX=${XDMF_INSTALL_DIR} -DBUILD_SHARED_LIBS=1 -Wno-dev # TODO enable when python wrapping works -DXDMF_WRAP_PYTHON=1  
+	 ##-DPYTHON_INCLUDE_DIR=$(python -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())")  -DPYTHON_LIBRARY=$(python -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
+	 
+	# Bypass building bugs: wrong file location and CMakeFiles
+	# cp *.py lib/
+	TEMP_XDMF_BUILD=`pwd`/lib/
+	#echo "export LD_LIBRARY_PATH=\"\${LD_LIBRARY_PATH}/\"${TEMP_XDMF_BUILD}" >> $SINGULARITY_ENVIRONMENT
+	  
+	#make -j ; make install
+	 
+	# echo "export LD_LIBRARY_PATH=${XDMF_INSTALL_DIR}/lib/:${XDMF_INSTALL_DIR}/lib64/:${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
+	# echo "export CPATH=${XDMF_INSTALL_DIR}/include/:${CPATH}" >> $SINGULARITY_ENVIRONMENT
+	# echo "export XDMF_ROOT=${XDMF_INSTALL_DIR}" >> $SINGULARITY_ENVIRONMENT
+	
+	   
+    ######################################################################################    
+	# Install pFIRE
+	######################################################################################
+	
+	# export OPENIMAGEIO_ROOT_DIR=${OIIO_ROOT}
+	
+	# PFIRE_REPOSITORY=https://github.com/INSIGNEO/pFIRE.git
+	PFIRE_REPOSITORY=https://github.com/insigneo-pfire/pFIRE.git
+
+	PFIRE_ROOT="/opt/pfire"
+	    
+    PFIRE_VERSION="v0.4.0"
+    
+    cd ${SANDBOX}       
+    git clone -b ${PFIRE_VERSION}  https://github.com/INSIGNEO/pFIRE.git ${PFIRE_VERSION}
+    cd ${PFIRE_VERSION}
+        
+    PFIRE_PATH="${PFIRE_ROOT}/${PFIRE_VERSION}/"
+    echo "PFIRE_PATH=${PFIRE_PATH}"
+  	  	
+    pwd        
+    #mkdir build && cd build  && cmake -DPETSC_EXECUTABLE_RUNS:BOOL=Yes  -DCMAKE_INSTALL_PREFIX=${PFIRE_PATH} ../ && \
+    #make   && make install && \
+    #ctest -V -L serial     
+
+	# Making v0.4.0 the pfire default binary 
+    #cp ${PFIRE_PATH}/bin/pfire ${PFIRE_PATH}/bin/pfire_${PFIRE_VERSION}    
+
+	# Enabling pFIRE v0.4.0 as default version for benchmarking  tests
+	export PATH=${PFIRE_PATH}/bin/:${PATH}
+	#echo "export PATH=${PFIRE_PATH}/bin/:\${PATH}" >> $SINGULARITY_ENVIRONMENT
+	
+	# Set library path
+	#export LD_LIBRARY_PATH=${PFIRE_PATH}/lib/:\${LD_LIBRARY_PATH}
+	echo "export LD_LIBRARY_PATH=${PFIRE_PATH}/lib/:\${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
+  	
+    ######################################################################################     
+	## Installing main branch pFIRE or current develop
+    ######################################################################################
+    
+    PFIRE_VERSION="test_framework_fix"
+	
+    cd ${SANDBOX}
+       
+    git clone -b ${PFIRE_VERSION}  ${PFIRE_REPOSITORY} ${PFIRE_VERSION}
+   
+    cd ${PFIRE_VERSION}
+   
+    PFIRE_SOURCE_MASTER=`pwd`
+    
+    export PFIRE_DEST_DIR=${PFIRE_ROOT}/${PFIRE_VERSION}
+    pwd    
+    echo ${DCMTK_DIR}
+  
+    mkdir build && cd build  && cmake -DCMAKE_PREFIX_PATH=${DCMTK_DIR} -DBUILD_TESTS=0 \
+                                      -DPETSC_EXECUTABLE_RUNS:BOOL=Yes  -DENABLE_OpenImageIO=1 -DENABLE_DCMTK=1 \
+                                      -G"Eclipse CDT4 - Unix Makefiles" \
+                                      -DCMAKE_INSTALL_PREFIX=${PFIRE_DEST_DIR} ../ && 
+    
+ 
+    make -j  && make install && \
+    ctest -V -L serial     
+     
+    # Add pFIRE filename version suffix
+    cp ${PFIRE_DEST_DIR}/bin/pfire ${PFIRE_DEST_DIR}/bin/pfire_${PFIRE_VERSION}
+    
+	PFIRE_MASTER_BIN_PATH="${PFIRE_DEST_DIR}/bin/"
+	
+	echo "PFIRE_MASTER_BIN_PATH=${PFIRE_MASTER_BIN_PATH}"
+
+	# Add to container env
+	echo "export PATH=${PFIRE_MASTER_BIN_PATH}:${PATH}" >> $SINGULARITY_ENVIRONMENT
+	
+	# Set library path
+	echo "export LD_LIBRARY_PATH=${PFIRE_DEST_DIR}/lib/:\${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
+		
+    
+ 
+
+
+    ###########################################################################
+    # Create Python virtual environment and install dependencies
+    
+	# python3 -m venv pyvenv3
+	
+	# source pyvenv3/bin/activate
+	
+	python3 -m pip install --upgrade pip
+	
+	pip3 --version
+	
+	python3 --version
+	
+	# echo "source pyvenv3/bin/activate" >> $SINGULARITY_ENVIRONMENT
+	# TODO install from requirements.txt when merged to main repo
+	
+    pip3 install PyQt5==5.15.4 
+    pip3 install PyQt5-Qt5==5.15.2 
+    pip3 install PyQt5-sip==12.9.0
+    pip3 install cached-property configobj cycler decorator docutils  dpath h5py 
+    pip3 install imageio kiwisolver matplotlib networkx numpy Pillow pyparsing   
+    pip3 install python-dateutil PyWavelets PyYAML scikit-image scipy six tabulate tifffile wheel
+
+	pip3 install packaging
+	  
+    #--prefix=${PFIRE_MASTER_BIN_PATH}
+
+
+	# TODO check flannel is visible
+
+ 	echo "PYTHONPATH=\${PYTHONPATH}"
+ 	echo ${PYTHONPATH}
+
+    ###########################################################################
+    # Install regression benchmark from pFIRE Master
+    # PFIRE_PATH    
+    cd ${SANDBOX}
+
+    # FIXME revert to pfire repo flannel 
+    #git clone https://github.com/insigneo-pfire/flannel.git flannel_local
+    pip3 install git+https://github.com/insigneo-pfire/flannel.git
+ 
+
+    BENCHMARKS_VERSION="master"
+    BENCHMARKS_PATH="${PFIRE_SOURCE_MASTER}/benchmarking/"
+    cd ${PFIRE_SOURCE_MASTER}
+ 
+	
+	# Install pfire-benchmarking
+    # python3 setup.py install 
+    
+    pip3 install ${BENCHMARKS_PATH}
+    
+    #pip3 install -r requirements.txt --user
+        
+    echo "export PYTHONPATH=${PYTHONPATH}:${BENCHMARKS_PATH}" >>  $SINGULARITY_ENVIRONMENT
+    
+    pip3 freeze
+    ls -lrt
+        
+    
+    # FIXME enable when merging insigneo-pfire to main repo 
+    # pip3 install /singularity_sandbox/master/utils/flannel --prefix=${PFIRE_MASTER_BIN_PATH}
+    # pip -r requirements.txt
+     
+    #pip3 install . # --prefix=${PFIRE_MASTER_BIN_PATH}
+    
+    # echo "export PYTHONPATH=${PFIRE_MASTER_BIN_PATH}:\${PYTHONPATH}" >> $SINGULARITY_ENVIRONMENT
+    
+
+	pip3 freeze 
+    ##################################################
+    # Define runtime env variables
+  	  	    
+#  	echo "export PATH=\${PATH}\"${PFIRE}\"" >> $SINGULARITY_ENVIRONMENT
+
+  	echo "PYTHONPATH=\${PYTHONPATH}"
+  	echo "PATH=${PATH}"
+
+#######################################################################################################################
+# Declare environment variables to be visible at runtime, no available at build time.
+# host env is visible unless launched with -e
+# Environment variables can be overridden or new added launching the image with: --env MYVAR=A,MYVAR2=B
+# A file containing env variables can be passed --env-file filename; with syntax MYVAR=A
+#
+%environment
+
+
+	#echo "NOW in %environment = ${NOW}"
+
+	# echo "singularity environment in %environment = $SINGULARITY_ENVIRONMENT"
+		
+	# Environment variables inherited from base images or defined here are not overwritten
+	# by host environment unless using the methods: --env, --env-file, or SINGULARITYENV_
+	
+    # export PETSC_DIR=/opt/petsc
+    # export SINGULARITY_PETSC_DIR=$PETSC_DIR
+    # export SINGULARITYENV_APPEND_PATH=$PETSC_DIR/bin
+    # export SINGULARITYENV_APPEND_LD_LIBRARY_PATH=$PETSC_DIR/lib
+
+	# export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${HDF5_ROOT}/lib:${PETSC_DIR}/${PETSC_ARCH}/lib	
+	# export CPATH_PATH=$CPATH:${HDF5_ROOT}/include:a${PETSC_DIR}/${PETSC_ARCH}/include
+	# export PATH=$PATH:${PFIRE_PATH}
+
+	# echo "before exporting in environment PETSC_DIR=${PETSC_DIR}"
+	# export PETSC_DIR=${PETSC_DIR}
+	# export PETSC_ARCH=${PETSC_ARCH}
+    # export MPI_ROOT="/opt/ompi/"
+    # export MPI_DIR="/opt/ompi/"
+    # export CPATH="/opt/ompi/include/:$CPATH"  
+    
+    
+    
+	
+    # export SANDBOX=/singularity_sandbox
+	# export PETSC_DIR=$SANDBOX/petsc-3.10.5/
+	# export PETSC_ARCH=arch-linux2-c-debug
+	# export HDF5_ROOT=${PETSC_DIR}/${PETSC_ARCH}
+    # export MPI_HOME=${PETSC_DIR}/${PETSC_ARCH}
+    
+
+	
+%test
+
+
+    
