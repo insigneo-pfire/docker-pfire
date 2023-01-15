@@ -53,7 +53,8 @@
 	cd hdf5-${HDF5_VERSION}
 	
 	HDF5_ROOT="/opt/HDF5/${HDF5_VERSION}"
-
+	echo "export HDF5_ROOT=${HDF5_ROOT}" >> $SINGULARITY_ENVIRONMENT
+	
     CC=/opt/ompi/bin/mpicc ./configure --enable-parallel --prefix=${HDF5_ROOT}
     make -j 4
     make install
@@ -104,7 +105,9 @@
     export LD_LIBRARY_PATH=$PETSC_DIR/lib:$LD_LIBRARY_PATH
     export MANPATH=$PETSC_DIR/share/man:$MANPATH
 
-    
+    echo "export PETSC_ARCH=$PETSC_ARCH" >> $SINGULARITY_ENVIRONMENT
+    echo "export PETSC_DIR=$PETSC_DIR" >> $SINGULARITY_ENVIRONMENT
+      echo "export PETSC_DIR=$PETSC_DIR" >> $SINGULARITY_ENVIRONMENT  
     ##############################################################
 	# Configure mpich environment 
 	    # Information about the version of MPICH to use

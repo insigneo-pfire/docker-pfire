@@ -11,14 +11,14 @@ From: centos:8
 
 
 
-    
+####################################################################################
 %post
 
     # Setup directory structure
     export SANDBOX=/singularity_sandbox
     mkdir -p $SANDBOX 
     cd ${SANDBOX}
-      
+          
     #### System-wide installations
     
     # change repository stream    
@@ -35,18 +35,16 @@ From: centos:8
         
     yum install -y  git cmake make automake python2 python3 vim
     yum install -y  gcc-toolset-9     vim    #tzdata 
+	yum install -y  gcc-toolset-9-gcc-gfortran
     yum install -y   boost-program-options boost-test boost-filesystem boost-iostreams boost-serialization boost-timer boost-program-options boost-test boost-filesystem boost-iostreams boost-serialization boost-devel 
-
-    #OpenImageIO-devel dcmtk-devel \
-    #hdf5-openmpi-devel petsc
-  
-
     
     dnf groupinstall -y "Development Tools"
 
     ##############################################################
 
-
+	# Add shortcut for ll command
+	echo "ls -lrat \$@" > /usr/bin/ll
+	chmod +x /usr/bin/ll
          
     
 ####################################################################################
@@ -56,4 +54,4 @@ From: centos:8
 
     
 %runscript    
-    alias ll='ls -lrath'
+

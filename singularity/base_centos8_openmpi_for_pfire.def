@@ -1,5 +1,5 @@
-Bootstrap: docker
-From: centos:8
+Bootstrap: localimage
+From: base_centos8_for_pfire.sif
 
 #
 # Bind system folders into container folders with writing permissions
@@ -19,26 +19,7 @@ From: centos:8
     mkdir -p $SANDBOX 
     cd ${SANDBOX}
       
-    #### System-wide installations
-    dnf -y --disablerepo '*' --enablerepo=extras swap centos-linux-repos centos-stream-repos   
-    yum install -y wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm    
-    yum update -y
-    dnf install -y 'dnf-command(config-manager)'
-    dnf config-manager --set-enabled powertools
-
-    yum update -y 
-        
-    yum install -y  git cmake make automake python2 python3 vim
-    yum install -y  gcc-toolset-9-gcc-gfortran  
-    # yum install -y  gcc-toolset-9    
-    yum install -y     boost-program-options boost-test boost-filesystem boost-iostreams boost-serialization boost-timer boost-program-options boost-test boost-filesystem boost-iostreams boost-serialization boost-devel \
-
-    #OpenImageIO-devel dcmtk-devel \
-    #hdf5-openmpi-devel petsc
-    #openmpi-devel openmpi\  tzdata 
     
-    dnf groupinstall -y "Development Tools"
-
     ##############################################################
     # yum install -y   openmpi-devel openmpi
      
@@ -77,7 +58,7 @@ From: centos:8
     export PATH="$OMPI_DIR/bin:$PATH"
     export LD_LIBRARY_PATH="$OMPI_DIR/lib:$LD_LIBRARY_PATH"
     export MANPATH="$OMPI_DIR/share/man:$MANPATH"
-
+    export CPATH="$OMPI_DIR/include:$CPATH"
     
 %runscript    
-    alias ll='ls -lrath'
+    

@@ -35,11 +35,28 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
 	# <source> [<destination>]
 
 
-%runscript
-    echo "Container was created $NOW"
+#######################################################################################################################
+# Code in runscript is executed with singularity run command or by executing the container directly as a command.
+#
+%runscript    
+
     echo "Arguments received: $*"
     exec echo "$@"
-    
+
+#######################################################################################################################
+# executed when the instance start command is issued
+#   
+ 
+%startscript
+	
+
+#######################################################################################################################
+#
+
+%test
+	# executes a sdcript to validate the container at the end of the building process
+   
+####################################################################################################################### 
 %post
 	# Environment defined in the base image is inherited here
     
@@ -52,12 +69,13 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
 	##########################
 	
     # Setup directory structure
-    export SANDBOX=/tmp/singularity_sandbox
+    export SANDBOX=/tmp/singularity_sandbox/pfire_openmpi
+    rm -rf ${SANDBOX}
     mkdir -p $SANDBOX 
     cd ${SANDBOX}
 
 	# Directory with downloaded sources for installing dependencies
-	export DOWNLOADED_SOURCES="./sources/"
+	# export DOWNLOADED_SOURCES="./sources/"
 
 	
 	######################################################################################
@@ -102,12 +120,19 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
 	
 	# export OPENIMAGEIO_ROOT_DIR=${OIIO_ROOT}
 	
+	export HDF5_ROOT=/opt/HDF5/1.8.22
+
+    export PETSC_ARCH=opt
+    export PETSC_VERSION=3.10.5
+    export PETSC_DIR=/opt/petsc-${PETSC_VERSION}
+	
 	# PFIRE_REPOSITORY=https://github.com/INSIGNEO/pFIRE.git
 	PFIRE_REPOSITORY=https://github.com/insigneo-pfire/pFIRE.git
 
 	PFIRE_ROOT="/opt/pfire"
 	    
-    PFIRE_VERSION="v0.4.0"
+    PFIRE_VERSION="pfire_next"
+    #"v0.4.0"
     
     cd ${SANDBOX}       
     git clone -b ${PFIRE_VERSION}  https://github.com/INSIGNEO/pFIRE.git ${PFIRE_VERSION}
@@ -117,12 +142,12 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
     echo "PFIRE_PATH=${PFIRE_PATH}"
   	  	
     pwd        
-    #mkdir build && cd build  && cmake -DPETSC_EXECUTABLE_RUNS:BOOL=Yes  -DCMAKE_INSTALL_PREFIX=${PFIRE_PATH} ../ && \
-    #make   && make install && \
-    #ctest -V -L serial     
+    mkdir build && cd build  && cmake -DPETSC_EXECUTABLE_RUNS:BOOL=Yes  -DCMAKE_POLICY_DEFAULT_CMP0074=NEW -DCMAKE_INSTALL_PREFIX=${PFIRE_PATH} ../ && \
+    make   && make install && \
+    ctest -V -L serial     
 
 	# Making v0.4.0 the pfire default binary 
-    #cp ${PFIRE_PATH}/bin/pfire ${PFIRE_PATH}/bin/pfire_${PFIRE_VERSION}    
+    cp ${PFIRE_PATH}/bin/pfire ${PFIRE_PATH}/bin/pfire_${PFIRE_VERSION}    
 
 	# Enabling pFIRE v0.4.0 as default version for benchmarking  tests
 	export PATH=${PFIRE_PATH}/bin/:${PATH}
@@ -140,7 +165,7 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
 	
     cd ${SANDBOX}
        
-    git clone -b ${PFIRE_VERSION}  ${PFIRE_REPOSITORY} ${PFIRE_VERSION}
+    #git clone -b ${PFIRE_VERSION}  ${PFIRE_REPOSITORY} ${PFIRE_VERSION}
    
     cd ${PFIRE_VERSION}
    
@@ -150,27 +175,27 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
     pwd    
     echo ${DCMTK_DIR}
   
-    mkdir build && cd build  && cmake -DCMAKE_PREFIX_PATH=${DCMTK_DIR} -DBUILD_TESTS=0 \
-                                      -DPETSC_EXECUTABLE_RUNS:BOOL=Yes  -DENABLE_OpenImageIO=1 -DENABLE_DCMTK=1 \
-                                      -G"Eclipse CDT4 - Unix Makefiles" \
-                                      -DCMAKE_INSTALL_PREFIX=${PFIRE_DEST_DIR} ../ && 
+    # mkdir build && cd build  && cmake -DCMAKE_PREFIX_PATH=${DCMTK_DIR} -DBUILD_TESTS=0 \
+    #                                  -DPETSC_EXECUTABLE_RUNS:BOOL=Yes  -DENABLE_OpenImageIO=1 -DENABLE_DCMTK=1 \
+    #                                  -G"Eclipse CDT4 - Unix Makefiles" \
+    #                                  -DCMAKE_INSTALL_PREFIX=${PFIRE_DEST_DIR} ../ && 
     
  
-    make -j  && make install && \
-    ctest -V -L serial     
+    #make -j  && make install && \
+    #ctest -V -L serial     
      
     # Add pFIRE filename version suffix
-    cp ${PFIRE_DEST_DIR}/bin/pfire ${PFIRE_DEST_DIR}/bin/pfire_${PFIRE_VERSION}
+    #cp ${PFIRE_DEST_DIR}/bin/pfire ${PFIRE_DEST_DIR}/bin/pfire_${PFIRE_VERSION}
     
 	PFIRE_MASTER_BIN_PATH="${PFIRE_DEST_DIR}/bin/"
 	
-	echo "PFIRE_MASTER_BIN_PATH=${PFIRE_MASTER_BIN_PATH}"
+	#echo "PFIRE_MASTER_BIN_PATH=${PFIRE_MASTER_BIN_PATH}"
 
 	# Add to container env
-	echo "export PATH=${PFIRE_MASTER_BIN_PATH}:${PATH}" >> $SINGULARITY_ENVIRONMENT
+	#echo "export PATH=${PFIRE_MASTER_BIN_PATH}:${PATH}" >> $SINGULARITY_ENVIRONMENT
 	
 	# Set library path
-	echo "export LD_LIBRARY_PATH=${PFIRE_DEST_DIR}/lib/:\${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
+	#echo "export LD_LIBRARY_PATH=${PFIRE_DEST_DIR}/lib/:\${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
 		
     
  
@@ -255,12 +280,12 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
   	echo "PYTHONPATH=\${PYTHONPATH}"
   	echo "PATH=${PATH}"
 
-##########################################################################################
-# Declare environment variables to be visible when executed
+#######################################################################################################################
+# Declare environment variables to be visible at runtime, no available at build time.
 # host env is visible unless launched with -e
 # Environment variables can be overridden or new added launching the image with: --env MYVAR=A,MYVAR2=B
 # A file containing env variables can be passed --env-file filename; with syntax MYVAR=A
-
+#
 %environment
 
 
@@ -296,10 +321,6 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
 	# export HDF5_ROOT=${PETSC_DIR}/${PETSC_ARCH}
     # export MPI_HOME=${PETSC_DIR}/${PETSC_ARCH}
     
-%runscript    
-
-
-%startscript
 
 	
 %test
