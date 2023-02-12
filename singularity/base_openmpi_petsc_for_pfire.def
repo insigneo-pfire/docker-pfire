@@ -102,12 +102,14 @@
     export MPI_ROOT=${OMPI_DIR}
 
     export PATH=$PETSC_DIR/bin:$PATH
-    export LD_LIBRARY_PATH=$PETSC_DIR/lib:$LD_LIBRARY_PATH
+    echo "export LD_LIBRARY_PATH=${PETSC_DIR}/${PETSC_ARCH}/lib:$LD_LIBRARY_PATH"  >> $SINGULARITY_ENVIRONMENT
     export MANPATH=$PETSC_DIR/share/man:$MANPATH
 
     echo "export PETSC_ARCH=$PETSC_ARCH" >> $SINGULARITY_ENVIRONMENT
     echo "export PETSC_DIR=$PETSC_DIR" >> $SINGULARITY_ENVIRONMENT
-      echo "export PETSC_DIR=$PETSC_DIR" >> $SINGULARITY_ENVIRONMENT  
+    #echo "export PETSC_DIR=$PETSC_DIR" >> $SINGULARITY_ENVIRONMENT  
+    
+    
     ##############################################################
 	# Configure mpich environment 
 	    # Information about the version of MPICH to use
