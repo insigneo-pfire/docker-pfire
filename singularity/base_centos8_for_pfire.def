@@ -39,6 +39,8 @@ From: centos:8
     yum install -y   boost-program-options boost-test boost-filesystem boost-iostreams boost-serialization boost-timer boost-program-options boost-test boost-filesystem boost-iostreams boost-serialization boost-devel 
     
     dnf groupinstall -y "Development Tools"
+
+    yum install -y git-lfs
     git lfs install
 
     ##############################################################
