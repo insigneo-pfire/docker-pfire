@@ -41,7 +41,7 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
 %runscript    
 
     echo "Arguments received: $*"
-    exec echo "$@"
+    exec pfire $@
 
 #######################################################################################################################
 # executed when the instance start command is issued
