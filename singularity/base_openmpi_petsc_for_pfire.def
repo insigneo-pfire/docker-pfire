@@ -12,14 +12,22 @@
     
 %post
 
+    # Setup directory structure
+    export SANDBOX=/singularity_sandbox
+    mkdir -p $SANDBOX 
+    ls
+    cd $SANDBOX
+    
+    
     # Install system wide packages and updates
-    dnf -y --disablerepo '*' --enablerepo=extras swap centos-linux-repos centos-stream-repos
-	dnf -y distro-sync
+    #dnf -y --disablerepo '*' --enablerepo=extras swap centos-linux-repos centos-stream-repos
+	#dnf -y distro-sync
 
-    yum install -y wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+    #yum install -y wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
     
     yum install -y python39 python39-lxml python39-numpy-doc python39-pip python39-devel  
-    yum install -y  dcmtk.x86_64  dcmtk-devel.x86_64 libjpeg-turbo libjpeg-turbo-devel swig libxml2 libxml2-devel python3-libxml2 openssl openssl-devel doxygen
+    #yum install -y  dcmtk.x86_64  dcmtk-devel.x86_64 libjpeg-turbo libjpeg-turbo-devel
+    yum install -y swig libxml2 libxml2-devel python3-libxml2 openssl openssl-devel doxygen
     
     pip3 install --upgrade pip
     pip3 install PyQt5==5.15.4 
@@ -30,21 +38,13 @@
     pip3 install matplotlib networkx numpy Pillow pyparsing   
     pip3 install python-dateutil PyWavelets PyYAML scikit-image scipy six tabulate tifffile 
     
-    # Setup directory structure
-    export SANDBOX=/singularity_sandbox
-    mkdir -p $SANDBOX 
-    cd ${SANDBOX}
 
-    echo "alias ll='ls -lrath'" >> /etc/.profile
-    echo "alias ll='ls -lrath'" >> /etc/.bashrc
-
-	LOCAL_PACKAGES_DIR="/home/sa_ac1dt/DEVELOP/INSIGNEO/PFIRE/docker-pfire/singularity/packages/"
-	
-	
-	
+    
+	#export LOCAL_PACKAGES_DIR="/home/sa_ac1dt/DEVELOP/INSIGNEO/PFIRE/docker-pfire/singularity/packages/"
     ###################################################################
 	# Install HDF5
-	
+
+	echo "install HDF5"
 	HDF5_VERSION="1.8.22"
 	wget https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.8/hdf5-1.8.22/src/hdf5-1.8.22.tar.gz
 	#tar -zxvf ${LOCAL_PACKAGES_DIR}hdf5-${HDF5_VERSION}.tar.gz
@@ -53,7 +53,8 @@
 	cd hdf5-${HDF5_VERSION}
 	
 	HDF5_ROOT="/opt/HDF5/${HDF5_VERSION}"
-
+	echo "export HDF5_ROOT=${HDF5_ROOT}" >> $SINGULARITY_ENVIRONMENT
+	
     CC=/opt/ompi/bin/mpicc ./configure --enable-parallel --prefix=${HDF5_ROOT}
     make -j 4
     make install
@@ -101,9 +102,13 @@
     export MPI_ROOT=${OMPI_DIR}
 
     export PATH=$PETSC_DIR/bin:$PATH
-    export LD_LIBRARY_PATH=$PETSC_DIR/lib:$LD_LIBRARY_PATH
+    echo "export LD_LIBRARY_PATH=${PETSC_DIR}/${PETSC_ARCH}/lib:$LD_LIBRARY_PATH"  >> $SINGULARITY_ENVIRONMENT
     export MANPATH=$PETSC_DIR/share/man:$MANPATH
 
+    echo "export PETSC_ARCH=$PETSC_ARCH" >> $SINGULARITY_ENVIRONMENT
+    echo "export PETSC_DIR=$PETSC_DIR" >> $SINGULARITY_ENVIRONMENT
+    #echo "export PETSC_DIR=$PETSC_DIR" >> $SINGULARITY_ENVIRONMENT  
+    
     
     ##############################################################
 	# Configure mpich environment 
