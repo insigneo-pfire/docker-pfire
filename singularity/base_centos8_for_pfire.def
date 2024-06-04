@@ -1,7 +1,9 @@
 Bootstrap: docker
-From: centos:8
+#From: centos:8
+#From: stream8
+#docker pull quay.io/centos/centos:stream8
+From: quay.io/centos/centos:stream8
 
-#
 # Bind system folders into container folders with writing permissions
 # 1) run, exec, shell, and instance start will accept the --bind/-B command-line option to specify bind paths [:dest_in_container[:ro|rw]]
 #    -B can be repeated or the paths can be comma separated
@@ -9,7 +11,11 @@ From: centos:8
 #
 #
 
+# Variables set in the %post section through $APPTAINER_ENVIRONMENT take precedence over those added via %environment
 
+
+%arguments
+	BOOST_VER=1.78
 
 ####################################################################################
 %post
@@ -25,24 +31,46 @@ From: centos:8
     dnf -y --disablerepo '*' --enablerepo=extras swap centos-linux-repos centos-stream-repos
 	dnf -y distro-sync
 	
+
 	yum install -y wget https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
 	    
-    yum update -y
     dnf install -y 'dnf-command(config-manager)'
     dnf config-manager --set-enabled powertools
 
-    yum update -y 
+    #yum update -y 
         
     yum install -y  git cmake make automake python2 python3 vim
-    yum install -y  gcc-toolset-9     vim    #tzdata 
-	yum install -y  gcc-toolset-9-gcc-gfortran
-    yum install -y   boost-program-options boost-test boost-filesystem boost-iostreams boost-serialization boost-timer boost-program-options boost-test boost-filesystem boost-iostreams boost-serialization boost-devel 
-    
+    #yum install -y  gcc-toolset-9  gcc-toolset-9-gcc-gfortran   vim    #tzdata 
+    yum install -y gcc-toolset-13 gcc-toolset-13-libstdc++-devel gcc-toolset-13-gcc-c++ gcc-toolset-13-gcc-gfortran gcc-toolset-13-gdb gcc-toolset-13-binutils-devel gcc-toolset-13-runtime
+	echo "source /opt/rh/gcc-toolset-13/enable" >> /etc/bashrc
+	echo "source /opt/rh/gcc-toolset-13/enable" >> $SINGULARITY_ENVIRONMENT
+    #yum install -y   boost-program-options boost-test boost-filesystem boost-iostreams boost-serialization boost-timer boost-program-options boost-test  boost-devel boost-static 
+
+	yum install -y   boost${BOOST_VER}-program-options boost${BOOST_VER}-test boost${BOOST_VER}-filesystem boost${BOOST_VER}-iostreams boost${BOOST_VER}-serialization boost${BOOST_VER}-timer boost-program-options boost${BOOST_VER}-test  boost${BOOST_VER}-devel boost${BOOST_VER}-static
+	
+	
     dnf groupinstall -y "Development Tools"
 
     yum install -y git-lfs
     git lfs install
 
+
+
+    yum install -y swig libxml2 libxml2-devel python3-libxml2 openssl openssl-devel doxygen
+    yum install -y python39 python39-lxml python39-numpy-doc python39-pip python39-devel  
+
+    
+    pip3 install --upgrade pip
+    pip3 install PyQt5==5.15.4 
+    pip3 install PyQt5-Qt5==5.15.2 
+    pip3 install PyQt5-sip==12.9.0
+    pip3 install cached-property configobj cycler decorator docutils  dpath h5py 
+    pip3 install imageio kiwisolver
+    pip3 install matplotlib networkx numpy Pillow pyparsing   
+    pip3 install python-dateutil PyWavelets PyYAML scikit-image scipy six tabulate tifffile 
+    
+    echo export CPATH=/usr/include/boost1.78/ >>
+    echo "export CPATH=/usr/include/boost${BOOST_VER}:${CPATH}" >> $SINGULARITY_ENVIRONMENT
     ##############################################################
 
 	# Add shortcut for ll command

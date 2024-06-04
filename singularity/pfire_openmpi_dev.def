@@ -40,7 +40,7 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
 #
 %runscript    
 
-    echo "Arguments received: $*"
+    echo "Running pFIRE  $*"
     exec pfire $@
 
 #######################################################################################################################
@@ -54,7 +54,7 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
 #
 
 %test
-	# executes a sdcript to validate the container at the end of the building process
+	# executes a script to validate the container at the end of the building process
    
 ####################################################################################################################### 
 %post
@@ -63,8 +63,13 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
     # Install system wide packages and updates
 
 	# Add shortcut for ll command
-	echo "ls -lrat \$@" > /usr/bin/ll
-	chmod +x /usr/bin/ll
+	# echo "ls -lrat \$@" > /usr/bin/ll
+	# chmod +x /usr/bin/ll
+	############################
+	
+	yum remove boost* -y
+	BOOST_VER=1.78
+	yum install -y   boost${BOOST_VER}-program-options boost${BOOST_VER}-test boost${BOOST_VER}-filesystem boost${BOOST_VER}-iostreams boost${BOOST_VER}-serialization boost${BOOST_VER}-timer boost-program-options boost${BOOST_VER}-test  boost${BOOST_VER}-devel boost${BOOST_VER}-static
 	
 	##########################
 	
@@ -124,16 +129,20 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
 
 	PFIRE_ROOT="/opt/pfire"
 	    
-    PFIRE_VERSION="v0.4.0"
+    ######################################################################################     
+	## Installing v0.4.0
+    ######################################################################################
+    	    
+    # PFIRE_VERSION="v0.4.0"
     
-    cd ${SANDBOX}       
-    git clone -b ${PFIRE_VERSION}  https://github.com/INSIGNEO/pFIRE.git ${PFIRE_VERSION}
-    cd ${PFIRE_VERSION}
+    #cd ${SANDBOX}       
+    #git clone -b ${PFIRE_VERSION}  https://github.com/INSIGNEO/pFIRE.git ${PFIRE_VERSION}
+    #cd ${PFIRE_VERSION}
         
-    PFIRE_PATH="${PFIRE_ROOT}/${PFIRE_VERSION}/"
-    echo "PFIRE_PATH=${PFIRE_PATH}"
+    #PFIRE_PATH="${PFIRE_ROOT}/${PFIRE_VERSION}/"
+    #echo "PFIRE_PATH=${PFIRE_PATH}"
   	  	
-    pwd        
+    #pwd        
     #mkdir build && cd build  && cmake -DPETSC_EXECUTABLE_RUNS:BOOL=Yes  -DCMAKE_INSTALL_PREFIX=${PFIRE_PATH} ../ && \
     #make   && make install && \
     #ctest -V -L serial     
@@ -142,7 +151,7 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
     #cp ${PFIRE_PATH}/bin/pfire ${PFIRE_PATH}/bin/pfire_${PFIRE_VERSION}    
 
 	# Enabling pFIRE v0.4.0 as default version for benchmarking  tests
-	export PATH=${PFIRE_PATH}/bin/:${PATH}
+	#export PATH=${PFIRE_PATH}/bin/:${PATH}
 	#echo "export PATH=${PFIRE_PATH}/bin/:\${PATH}" >> $SINGULARITY_ENVIRONMENT
 	
 	# Set library path
@@ -154,9 +163,17 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
     ######################################################################################
     
     PFIRE_VERSION="test_framework_fix"
+    
+	PFIRE_PATH="${PFIRE_ROOT}/${PFIRE_VERSION}/"
+    echo "PFIRE_PATH=${PFIRE_PATH}"
+    
+    export PATH=${PFIRE_PATH}/bin/:${PATH}
+	
 	
     cd ${SANDBOX}
        
+    rm -rf  ${PFIRE_VERSION}
+    
     git clone -b ${PFIRE_VERSION}  ${PFIRE_REPOSITORY} ${PFIRE_VERSION}
    
     cd ${PFIRE_VERSION}
@@ -167,22 +184,23 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
     pwd    
     echo ${DCMTK_DIR}
   
-    mkdir build && cd build  && cmake -DCMAKE_PREFIX_PATH=${DCMTK_DIR} -DBUILD_TESTS=0 \
-                                      -DPETSC_EXECUTABLE_RUNS:BOOL=Yes  -DENABLE_OpenImageIO=1 -DENABLE_DCMTK=1 \
-                                      -G"Eclipse CDT4 - Unix Makefiles" \
-                                      -DCMAKE_INSTALL_PREFIX=${PFIRE_DEST_DIR} ../ && 
+    #DEBUG mkdir build && cd build  && cmake -DCMAKE_PREFIX_PATH=${DCMTK_DIR} -DBUILD_TESTS=0 \
+    #DEBUG                                   -DPETSC_EXECUTABLE_RUNS:BOOL=Yes  -DENABLE_OpenImageIO=1 -DENABLE_DCMTK=1 \
+    #DEBUG                             -G"Eclipse CDT4 - Unix Makefiles" \
+    #DEBUG                                   -DCMAKE_INSTALL_PREFIX=${PFIRE_DEST_DIR} ../ && 
     
  
-    make -j  && make install && \
-    ctest -V -L serial     
+    #DEBUG   make -j  && make install && \
+    #DEBUG  ctest -V -L serial     
      
     # Add pFIRE filename version suffix
-    cp ${PFIRE_DEST_DIR}/bin/pfire ${PFIRE_DEST_DIR}/bin/pfire_${PFIRE_VERSION}
+    #DEBUG cp ${PFIRE_DEST_DIR}/bin/pfire ${PFIRE_DEST_DIR}/bin/pfire_${PFIRE_VERSION}
     
 	PFIRE_MASTER_BIN_PATH="${PFIRE_DEST_DIR}/bin/"
 	
 	echo "PFIRE_MASTER_BIN_PATH=${PFIRE_MASTER_BIN_PATH}"
 
+	
 	# Add to container env
 	echo "export PATH=${PFIRE_MASTER_BIN_PATH}:${PATH}" >> $SINGULARITY_ENVIRONMENT
 	
@@ -237,6 +255,14 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
  
 
     BENCHMARKS_VERSION="master"
+    #### testing
+    git clone -b ${BENCHMARKS_VERSION}  ${PFIRE_REPOSITORY} ${BENCHMARKS_VERSION}
+   
+    cd ${BENCHMARKS_VERSION}
+    PFIRE_SOURCE_MASTER=`pwd`
+   
+    #######
+    
     BENCHMARKS_PATH="${PFIRE_SOURCE_MASTER}/benchmarking/"
     cd ${PFIRE_SOURCE_MASTER}
  

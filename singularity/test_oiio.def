@@ -1,0 +1,141 @@
+#base_openmpi_petsc_dcmtk_oiio_for_pfire.def
+#Bootstrap: library
+Bootstrap: localimage
+From: base_openmpi_petsc_for_pfire.sif 
+
+
+%arguments
+    # Variables defined in this secctions replaces placeholder in {{}}
+    # Use -build-arg or --build-arg-file to override default values on building command line
+    OIIO_VERSION=v2.5.11.0
+	LOCAL=0
+	
+
+
+%post    
+    
+		
+
+    # to install dependency packages only use: yum repoquery --requires OpenImageIO
+
+
+ 	
+ 	
+	###########################################################################
+	# Install OpenImageIO with its dependencies
+	
+	SANDBOX=/singularity_sandbox/sandbox_oiio/
+	
+	mkdir -p $SANDBOX
+	
+	export DEST_OIIO=/usr/local/oiio/
+	
+	echo "export OIIO_ROOT=${DEST_OIIO}"                 >> $SINGULARITY_ENVIRONMENT
+	echo "export OPENIMAGEIO_ROOT_DIR=${DEST_OIIO}"      >> $SINGULARITY_ENVIRONMENT
+	  
+	echo "export PATH=\"\${PATH}:${DEST_OIIO}/bin/\""   >> $SINGULARITY_ENVIRONMENT 
+	echo "export LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH}:${DEST_OIIO}/lib:${DEST_OIIO}/lib64\"" >> $SINGULARITY_ENVIRONMENT
+	echo "export CPATH=\"${CPATH}:${DEST_OIIO}/include/\"" >> $SINGULARITY_ENVIRONMENT
+	
+	
+	cd $SANDBOX
+	#https://github.com/AcademySoftwareFoundation/OpenImageIO/archive/refs/tags/v2.5.11.0.tar.gz
+	
+	git clone -b {{ OIIO_VERSION }} https://github.com/OpenImageIO/oiio.git oiio
+	cd oiio
+	
+	
+	pwd
+	OIIO_REPO_DIR=`pwd`
+	echo "OIIO_REPO_DIR=${OIIO_REPO_DIR}"
+	
+	cd $SANDBOX
+	mkdir build
+	cd build
+	pwd 
+	OIIO_BUILD_DIR=`pwd` 
+	
+	#####################
+	# Install OIIO dependencies
+	OIIO_BUILD_SCRIPTS_DIR=${OIIO_REPO_DIR}/src/build-scripts/
+
+	echo "$OIIO_BUILD_SCRIPTS_DIR/build_openexr.bash"
+	ls -l ${OIIO_BUILD_SCRIPTS_DIR}/
+    ${OIIO_BUILD_SCRIPTS_DIR}/build_openexr.bash
+    $OIIO_BUILD_SCRIPTS_DIR/build_libtiff.bash
+	$OIIO_BUILD_SCRIPTS_DIR/build_libjpeg-turbo.bash
+	$OIIO_BUILD_SCRIPTS_DIR/build_libpng.bash
+	$OIIO_BUILD_SCRIPTS_DIR/build_libraw.bash 
+	$OIIO_BUILD_SCRIPTS_DIR/build_zlib.bash
+	$OIIO_BUILD_SCRIPTS_DIR/build_pugixml.bash
+    mkdir -p $DEST_OIIO	
+	mv ${OIIO_BUILD_DIR}/ext/dist/* $DEST_OIIO/
+	
+    export OPENEXR_ROOT=$DEST_OIIO/ext/dist	
+    export LIBTIFF_ROOT=$DEST_OIIO/
+    export TIFF_ROOT=$DEST_OIIO/
+    export JPEGTurbo_ROOT=$DEST_OIIO/
+    export PNG_ROOT=$DEST_OIIO/
+    export ZLIB_ROOT=$DEST_OIIO/
+    export pugixml_ROOT=$DEST_OIIO/
+    export LibRaw_ROOT=$DEST_OIIO/
+
+    # Set env variables within container
+    export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:$DEST_OIIO/lib:$DEST_OIIO/lib64/:usr/lib64
+    echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
+    echo "export LD_LIBRARY_PATH=\${LD_LIBRARY_PATH}:$DEST_OIIO/lib:$DEST_OIIO/lib64/" >> $SINGULARITY_ENVIRONMENT
+    	
+	echo "export ILMBASE_LIBRARY_DIR=$DEST_OIIO/" >> $SINGULARITY_ENVIRONMENT
+	echo "export LIBTIFF_ROOT=$DEST_OIIO/"        >> $SINGULARITY_ENVIRONMENT
+	echo "export TIFF_ROOT=$DEST_OIIO/"        >> $SINGULARITY_ENVIRONMENT
+	echo "export LIB_ROOT=$DEST_OIIO/"            >> $SINGULARITY_ENVIRONMENT
+
+    #export OPENEXR_ROOT=/singularity_sandbox/sandbox_oiio/build/ext/dist
+    export ILMBASE_ROOT=$OPENEXR_ROOT
+
+    export ILMBASE_LIBRARY_DIR=${ILMBASE_ROOT}/lib
+    export OPENEXR_LIBRARY_DIR=${OPENEXR_ROOT}/lib
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${OPENEXR_LIBRARY_DIR}
+
+	#echo "export OpenEXR_ROOT=${OPENEXR_ROOT}"        >> $SINGULARITY_ENVIRONMENT
+	echo "export ILMBASE_LIBRARY_DIR=${ILMBASE_LIBRARY_DIR}" >> $SINGULARITY_ENVIRONMENT
+	echo "export OPENEXR_LIBRARY_DIR=$DEST_OIIO/" >> $SINGULARITY_ENVIRONMENT
+	export OpenEXR_DIR=$DEST_OIIO
+	echo "export OpenEXR_DIR=${OpenEXR_DIR}"        >> $SINGULARITY_ENVIRONMENT
+	
+	#echo "export OpenJPEG_ROOT=$DEST_OIIO/"      >> $SINGULARITY_ENVIRONMENT
+
+	echo "export JPEGTurbo_ROOT=$DEST_OIIO/"      >> $SINGULARITY_ENVIRONMENT
+	export JPEG_ROOT=$JPEGTurbo_ROOT
+	echo "export JPEG_ROOT=$JPEG_ROOT"            >> $SINGULARITY_ENVIRONMENT
+	
+	echo "export PNG_ROOT=$DEST_OIIO/"            >> $SINGULARITY_ENVIRONMENT
+	echo "export pugixml_ROOT=$DEST_OIIO/"        >> $SINGULARITY_ENVIRONMENT
+	echo "export ZLIB_ROOT=$DEST_OIIO/"           >> $SINGULARITY_ENVIRONMENT
+	
+    export Boost_ROOT=/usr/lib64/
+    echo "export Boost_ROOT=$Boost_ROOT"           >> $SINGULARITY_ENVIRONMENT
+	
+	
+	####################################################
+	# Building OpenImageIO
+	
+	cmake $OIIO_REPO_DIR -DCMAKE_INSTALL_PREFIX=$DEST_OIIO/  -DBOOST_ROOT=/usr/lib64 -DCMAKE_PREFIX_PATH=$DEST_OIIO/  -DCMAKE_CXX_STANDARD=17 -DUSE_PYTHON=0  -DUSE_Qt5=0 -DUSE_OpenGL=0 -DOIIO_DOWNLOAD_MISSING_TESTDATA=1 -DBUILD_TESTING=1    -DSTOP_ON_WARNING=0 -DALWAYS_PREFER_CONFIG=1
+	 make -j ; 	make install
+	#echo "export OpenImageIO_DIR=$DEST_OIIO/" >> $SINGULARITY_ENVIRONMENT
+    ####################################################
+	## CMAKE OpenImageIO STATIC
+	
+	#DEBUGcd $OIIO_BUILD_DIR
+	
+	#DEBUGcdmkdir $DEST_OIIO/static 
+	#DEBUGcdmkdir oiio_build_static
+	#DEBUGcdcd oiio_build_static
+	
+	#DEBUGcdcmake $OIIO_REPO_DIR  -DCMAKE_PREFIX_PATH=$DEST_OIIO/static -DBUILD_OIIOUTIL_ONLY=0 --log-level=TRACE \
+	#                      -DUSE_PYTHON=0  -DUSE_Qt5=0 -DUSE_OpenGL=0 -DUSE_OpenCV=0 -DUSE_Libheif=0 -DBUILD_MISSING_DEPS=1  -DBUILD_TESTING=0 \
+	#                      -DCMAKE_INSTALL_PREFIX=$DEST_OIIO/static -DSTOP_ON_WARNING=0\
+	#                      -DBOOST_ROOT=/usr/lib64 -DBUILD_SHARED_LIBS=0 -DLINKSTATIC=1
+	
+	# make -j ;	make install
+	
