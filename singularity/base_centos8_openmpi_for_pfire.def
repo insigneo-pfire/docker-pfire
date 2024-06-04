@@ -10,7 +10,11 @@ From: base_centos8_for_pfire.sif
 #
 
 
-
+%arguments
+    # Variables defined in this secctions replaces placeholder in {{}}
+    # Use -build-arg or --build-arg-file to override default values on building command line
+    BUILD_OMPI_VERSION=5.0.3
+	LOCAL=0
     
 %post
 
@@ -30,31 +34,36 @@ From: base_centos8_for_pfire.sif
     # Install support of omnipath
     yum install -y rdma-core-devel libibmad-devel libpsm2 opa-basic-tools libfabric libfabric-devel libpsm2-compat libpsm2-devel
 
-    export OMPI_VERSION=4.0.1
-    export OMPI_DIR=/opt/ompi
-    export OMPI_URL="https://download.open-mpi.org/release/open-mpi/v4.0/openmpi-$OMPI_VERSION.tar.bz2"
-    mkdir -p /tmp/ompi
-    mkdir -p /opt
+    export OMPI_VERSION={{ BUILD_OMPI_VERSION }}
+    export OMPI_DIR=/opt/ompi/${OMPI_VERSION}
+    export OMPI_URL="https://download.open-mpi.org/release/open-mpi/v5.0/openmpi-$OMPI_VERSION.tar.bz2"
+    export OMPI_SANDBOX=${SANDBOX}/ompi
+    mkdir -p ${OMPI_SANDBOX}
+    mkdir -p ${OMPI_DIR}
 
     # Download
-    cd /tmp/ompi && wget -O openmpi-$OMPI_VERSION.tar.bz2 $OMPI_URL && tar -xjf openmpi-$OMPI_VERSION.tar.bz2
+    cd ${OMPI_SANDBOX} && wget -O openmpi-$OMPI_VERSION.tar.bz2 $OMPI_URL && tar -xjf openmpi-$OMPI_VERSION.tar.bz2
  
     # Compile and install
-    cd /tmp/ompi/openmpi-$OMPI_VERSION && ./configure --prefix=$OMPI_DIR --with-psm2  && make -j8 install
+    cd ${OMPI_SANDBOX}/openmpi-$OMPI_VERSION && ./configure --prefix=$OMPI_DIR --with-psm2  && make -j8 install
 
     # Set env variables so we can compile our application
     export PATH=$OMPI_DIR/bin:$PATH
     export LD_LIBRARY_PATH=$OMPI_DIR/lib:$LD_LIBRARY_PATH
 
-     
     
+	echo "export PATH=\"\${PATH}:${OMPI_DIR}/bin/\""   >> $SINGULARITY_ENVIRONMENT 
+	echo "export LD_LIBRARY_PATH=\"${LD_LIBRARY_PATH}:${OMPI_DIR}/lib:${OMPI_DIR}/lib64:\"" >> $SINGULARITY_ENVIRONMENT
+	echo "export CPATH=\"\${CPATH}:${OMPI_DIR}/include/\"" >> $SINGULARITY_ENVIRONMENT
+    echo "export MPI_ROOT=\"${OMPI_DIR}\"" >> $SINGULARITY_ENVIRONMENT
+	echo "export OMPI_DIR=\"${OMPI_DIR}\"" >> $SINGULARITY_ENVIRONMENT 
 ####################################################################################
 
 # Build time not runtime but not build time
 %environment
     # Point to OMPI binaries, libraries, man pages
-    export OMPI_DIR=/opt/ompi
-    export MPI_ROOT=${OMPI_DIR}
+    #export OMPI_DIR=${OMPI_DIR}
+    #export MPI_ROOT=${OMPI_DIR}
     export PATH="$OMPI_DIR/bin:$PATH"
     export LD_LIBRARY_PATH="$OMPI_DIR/lib:$LD_LIBRARY_PATH"
     export MANPATH="$OMPI_DIR/share/man:$MANPATH"

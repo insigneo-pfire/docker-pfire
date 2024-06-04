@@ -1,7 +1,7 @@
 Bootstrap: localimage
 #From: base_openmpi_petsc_for_pfire.sif
-From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
-
+#From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
+From: test_oiio.sif
 # Fingerprints: add signature from bootstrap image
 
 # Notes fo Singularity settings
@@ -59,22 +59,19 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
 ####################################################################################################################### 
 %post
 	# Environment defined in the base image is inherited here
-    
     # Install system wide packages and updates
 
-	# Add shortcut for ll command
-	# echo "ls -lrat \$@" > /usr/bin/ll
-	# chmod +x /usr/bin/ll
-	############################
+	#dnf --disablerepo '*' --enablerepo=extras swap centos-linux-repos centos-stream-repos
+	#dnf distro-sync
 	
-	yum remove boost* -y
-	BOOST_VER=1.78
-	yum install -y   boost${BOOST_VER}-program-options boost${BOOST_VER}-test boost${BOOST_VER}-filesystem boost${BOOST_VER}-iostreams boost${BOOST_VER}-serialization boost${BOOST_VER}-timer boost-program-options boost${BOOST_VER}-test  boost${BOOST_VER}-devel boost${BOOST_VER}-static
+	############################
+    # Optional requirement to open DICOM images
+	#yum install -y dcmtk dcmtk-devel
 	
 	##########################
 	
-    # Setup directory structure
-    export SANDBOX=/tmp/singularity_sandbox
+    # Setup directory structure in container overlay
+    export SANDBOX=/singularity_sandbox
     mkdir -p $SANDBOX 
     cd ${SANDBOX}
 
@@ -83,17 +80,102 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
 
 	
 	######################################################################################
+	# DCMTK temp
+	
+   
+    export DCMTK_SRC=${SANDBOX}/dcmtk
+    export DCMTK_BUILD=${SANDBOX}/dcmtk_build
+    mkdir -p ${DCMTK_SRC}
+    mkdir -p ${DCMTK_BUILD}
+    
+    cd ${DCMTK_SRC}
+    
+    git clone https://github.com/DCMTK/dcmtk.git ${SANDBOX}/dcmtk
+   
+    export DEST_DCMTK=/usr/local/DCMTK/
+    export DEST_DCMTK_single=$DEST_DCMTK/single_lib
+    export DEST_DCMTK_static=$DEST_DCMTK/static
+    export DEST_DCMTK_shared=$DEST_DCMTK/shared
+    
+    mkdir -p $DEST_DCMTK
+    mkdir -p $DEST_DCMTK_single
+    mkdir -p $DEST_DCMTK_static
+    mkdir -p $DEST_DCMTK_shared
+    
+    mkdir -p $DCMTK_BUILD
+    cd       ${DCMTK_BUILD}
+          
+    
+     
+    #export DEST_DCMTK=/usr/local/DCMTK/shared_single
+    
+    #cmake ../dcmtk -DBUILD_SHARED_LIBS=1   -DDCMTK_PORTABLE_LINUX_BINARIES=1 -DCMAKE_POSITION_INDEPENDENT_CODE=1 -DDCMTK_LINK_STATIC=0 -DCMAKE_INSTALL_PREFIX=$DEST_DCMTK
+    #cmake ../dcmtk -DBUILD_SHARED_LIBS=1   -DDCMTK_PORTABLE_LINUX_BINARIES=1  -dCMAKE_CXX_FLAGS=“-fPIC” -DCMAKE_C_FLAGS=“-fPIC” -DDCMTK_LINK_STATIC=0 -DCMAKE_INSTALL_PREFIX=$DEST_DCMTK
+
+	#-------------------------------------------------------------------------- 
+	# Build shared libraries
+	#--------------------------------------------------------------------------
+	 
+    cd       ${DCMTK_BUILD}
+    cmake  ${DCMTK_SRC}  -DBUILD_SHARED_LIBS=1  -DCMAKE_INSTALL_PREFIX=$DEST_DCMTK_shared
+    
+	make -j 
+	make install
+	
+	ls -lrat $DEST_DCMTK_shared
+	    
+	
+	echo "export LD_LIBRARY_PATH=${DEST_DCMTK_shared}/lib/:${DEST_DCMTK_shared}/lib64/:${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
+	echo "export DCMTK_ROOT=${DEST_DCMTK_shared}"														   >> $SINGULARITY_ENVIRONMENT
+	echo "export CPATH=${DEST_DCMTK_shared}/include/:${CPATH}"                                             >> $SINGULARITY_ENVIRONMENT
+    
+	
+	export DCMTK_ROOT=${DEST_DCMTK_shared}
+		
+	#--------------------------------------------------------------------------
+  	# Build all dcmtk in a single library
+    #--------------------------------------------------------------------------
+    
+    
+    #cmake  ${DCMTK_SRC}  -DBUILD_SHARED_LIBS=1 -DBUILD_SINGLE_SHARED_LIBRARY=1 \
+    #		-DCMAKE_CXX_FLAGS=-fPIC -DCMAKE_C_FLAGS=-fPIC \
+   # 		-DCMAKE_INSTALL_PREFIX=$DEST_DCMTK_single
+
+	#make -j 
+	#make install
+	
+	#ls -lrat $DEST_DCMTK_single
+	
+	
+	
+	#export DCMTK_DIR=$DEST_DCMTK_single/lib64/cmake/dcmtk/
+        
+	#echo "export LD_LIBRARY_PATH=${DEST_DCMTK_single}/lib/:${DEST_DCMTK_single}/lib64/:${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
+	#echo "export DCMTK_DIR=${DCMTK_DIR}" 						>> $SINGULARITY_ENVIRONMENT
+	#echo "export CPATH=${DEST_DCMTK_single}/include/:${CPATH}"  >> $SINGULARITY_ENVIRONMENT
+	
+	# BUILD_SHARED_LIBS 	 DCMTK_LINK_STATIC  	 DCMTK_PORTABLE_LINUX_BINARIES 	  BUILD_SINGLE_SHARED_LIBRARY BUILD_SHARED_LIBS
+	# -DBUILD_SHARED_LIBS=1   -DDCMTK_PORTABLE_LINUX_BINARIES=1  -DCMAKE_CXX_FLAGS=“-fPIC” -DCMAKE_C_FLAGS=“-fPIC” -DDCMTK_LINK_STATIC=0 -DCMAKE_INSTALL_PREFIX=
+
+	env
+	#echo ${OpenImageIO_ROOT}
+	#echo ${OpenImageIO_DIR}	
+    #echo ${DCMTK_DIR}
+
+	
+	
+	
     ######################################################################################
     # Install pFIRE requirements/dependencies and configure env variables
     
     # Make variables visible in Singularity image
 	
 	###################################################	   
-	# Install XDMF
+	# Install XDMF, OPTIONAL
     # .. insigneo-pfire/docker-pfire/singularity/sandbox/xdmf_git_python3/xdmf/build/tests/Python
     
-    cd ${SANDBOX}
-    XDMF_INSTALL_DIR="${SANDBOX}/xdmf_bin"
+    # cd ${SANDBOX}
+    # XDMF_INSTALL_DIR="${SANDBOX}/xdmf_bin"
     # wget https://gitlab.kitware.com/xdmf/xdmf/-/archive/master/xdmf-master.tar.gz
     # tar -zxvf xdmf-master.tar.gz
     # cd xdmf-master
@@ -104,14 +186,14 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
 	# cd xdm3_python3
 	# mkdir build ; cd build
 	# cmake .. -DCMAKE_INSTALL_PREFIX=${XDMF_INSTALL_DIR} -DBUILD_SHARED_LIBS=1 -Wno-dev # TODO enable when python wrapping works -DXDMF_WRAP_PYTHON=1  
-	 ##-DPYTHON_INCLUDE_DIR=$(python -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())")  -DPYTHON_LIBRARY=$(python -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
+	##-DPYTHON_INCLUDE_DIR=$(python -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())")  -DPYTHON_LIBRARY=$(python -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
 	 
 	# Bypass building bugs: wrong file location and CMakeFiles
 	# cp *.py lib/
-	TEMP_XDMF_BUILD=`pwd`/lib/
-	#echo "export LD_LIBRARY_PATH=\"\${LD_LIBRARY_PATH}/\"${TEMP_XDMF_BUILD}" >> $SINGULARITY_ENVIRONMENT
+	# TEMP_XDMF_BUILD=`pwd`/lib/
+	# echo "export LD_LIBRARY_PATH=\"\${LD_LIBRARY_PATH}/\"${TEMP_XDMF_BUILD}" >> $SINGULARITY_ENVIRONMENT
 	  
-	#make -j ; make install
+	# make -j ; make install
 	 
 	# echo "export LD_LIBRARY_PATH=${XDMF_INSTALL_DIR}/lib/:${XDMF_INSTALL_DIR}/lib64/:${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
 	# echo "export CPATH=${XDMF_INSTALL_DIR}/include/:${CPATH}" >> $SINGULARITY_ENVIRONMENT
@@ -122,15 +204,18 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
 	# Install pFIRE
 	######################################################################################
 	
-	# export OPENIMAGEIO_ROOT_DIR=${OIIO_ROOT}
+	#  OPENIMAGEIO_ROOT_DIR is the location of OIIO TODO move into OIIO container
+	export OpenImageIO_ROOT=/usr/local/oiio
 	
-	# PFIRE_REPOSITORY=https://github.com/INSIGNEO/pFIRE.git
 	PFIRE_REPOSITORY=https://github.com/insigneo-pfire/pFIRE.git
 
-	PFIRE_ROOT="/opt/pfire"
+	# pFIRE destination dir to contain all installed versions
+	PFIRE_INSTALL_PREFIX="/opt/pfire"
+	mkdir -p $PFIRE_INSTALL_PREFIX
+	
 	    
     ######################################################################################     
-	## Installing v0.4.0
+	## Installing pFIRE v0.4.0
     ######################################################################################
     	    
     # PFIRE_VERSION="v0.4.0"
@@ -139,24 +224,24 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
     #git clone -b ${PFIRE_VERSION}  https://github.com/INSIGNEO/pFIRE.git ${PFIRE_VERSION}
     #cd ${PFIRE_VERSION}
         
-    #PFIRE_PATH="${PFIRE_ROOT}/${PFIRE_VERSION}/"
-    #echo "PFIRE_PATH=${PFIRE_PATH}"
+    #PFIRE_VER_INSTALL_PREFIX="${PFIRE_INSTALL_PREFIX}/${PFIRE_VERSION}/"
+    #echo "PFIRE_VER_INSTALL_PREFIX=${PFIRE_VER_INSTALL_PREFIX}"
   	  	
     #pwd        
-    #mkdir build && cd build  && cmake -DPETSC_EXECUTABLE_RUNS:BOOL=Yes  -DCMAKE_INSTALL_PREFIX=${PFIRE_PATH} ../ && \
+    #mkdir build && cd build  && cmake -DPETSC_EXECUTABLE_RUNS:BOOL=Yes  -DCMAKE_INSTALL_PREFIX=${PFIRE_VER_INSTALL_PREFIX} ../ && \
     #make   && make install && \
     #ctest -V -L serial     
 
 	# Making v0.4.0 the pfire default binary 
-    #cp ${PFIRE_PATH}/bin/pfire ${PFIRE_PATH}/bin/pfire_${PFIRE_VERSION}    
+    #cp ${PFIRE_VER_INSTALL_PREFIX}/bin/pfire ${PFIRE_VER_INSTALL_PREFIX}/bin/pfire_${PFIRE_VERSION}    
 
 	# Enabling pFIRE v0.4.0 as default version for benchmarking  tests
-	#export PATH=${PFIRE_PATH}/bin/:${PATH}
-	#echo "export PATH=${PFIRE_PATH}/bin/:\${PATH}" >> $SINGULARITY_ENVIRONMENT
+	#export PATH=${PFIRE_VER_INSTALL_PREFIX}/bin/:${PATH}
+	#echo "export PATH=${PFIRE_VER_INSTALL_PREFIX}/bin/:\${PATH}" >> $SINGULARITY_ENVIRONMENT
 	
 	# Set library path
-	#export LD_LIBRARY_PATH=${PFIRE_PATH}/lib/:\${LD_LIBRARY_PATH}
-	echo "export LD_LIBRARY_PATH=${PFIRE_PATH}/lib/:\${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
+	#export LD_LIBRARY_PATH=${PFIRE_VER_INSTALL_PREFIX}/lib/:\${LD_LIBRARY_PATH}
+	#echo "export LD_LIBRARY_PATH=${PFIRE_VER_INSTALL_PREFIX}/lib/:\${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
   	
     ######################################################################################     
 	## Installing main branch pFIRE or current develop
@@ -164,54 +249,69 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
     
     PFIRE_VERSION="test_framework_fix"
     
-	PFIRE_PATH="${PFIRE_ROOT}/${PFIRE_VERSION}/"
-    echo "PFIRE_PATH=${PFIRE_PATH}"
+    # Set installation prefix including version 
+	PFIRE_VER_INSTALL_PREFIX="${PFIRE_INSTALL_PREFIX}/${PFIRE_VERSION}/"
+    echo "PFIRE_VER_INSTALL_PREFIX=${PFIRE_VER_INSTALL_PREFIX}"
     
-    export PATH=${PFIRE_PATH}/bin/:${PATH}
+    export PATH=${PFIRE_VER_INSTALL_PREFIX}/bin/:${PATH}
 	
 	
     cd ${SANDBOX}
-       
-    rm -rf  ${PFIRE_VERSION}
+    PFIRE_SANDBOX=${SANDBOX}/pfire_sandbox
+    mkdir -p $PFIRE_SANDBOX
+     
+    #${PFIRE_VERSION}
     
     git clone -b ${PFIRE_VERSION}  ${PFIRE_REPOSITORY} ${PFIRE_VERSION}
    
     cd ${PFIRE_VERSION}
    
-    PFIRE_SOURCE_MASTER=`pwd`
+    PFIRE_SOURCE=`pwd`
     
-    export PFIRE_DEST_DIR=${PFIRE_ROOT}/${PFIRE_VERSION}
-    pwd    
-    echo ${DCMTK_DIR}
+    export PFIRE_DEST_DIR=${PFIRE_INSTALL_PREFIX}/${PFIRE_VERSION}
   
-    #DEBUG mkdir build && cd build  && cmake -DCMAKE_PREFIX_PATH=${DCMTK_DIR} -DBUILD_TESTS=0 \
-    #DEBUG                                   -DPETSC_EXECUTABLE_RUNS:BOOL=Yes  -DENABLE_OpenImageIO=1 -DENABLE_DCMTK=1 \
-    #DEBUG                             -G"Eclipse CDT4 - Unix Makefiles" \
-    #DEBUG                                   -DCMAKE_INSTALL_PREFIX=${PFIRE_DEST_DIR} ../ && 
+    pwd    
+    echo "DCMTK_ROOT=${DCMTK_ROOT}"
+    ll ${DCMTK_ROOT}
     
- 
-    #DEBUG   make -j  && make install && \
-    #DEBUG  ctest -V -L serial     
+    ######################################################################################
+    echo "====================================== test_framework_fix ======================================"
+  
+    cd $PFIRE_SANDBOX
+    PFIRE_VER_BUILD_DIR=${PFIRE_SANDBOX}/${PFIRE_VERSION}_build
+    
+    export CMAKE_PREFIX_PATH=$CMAKE_PREFIX_PATH:${DCMTK_ROOT}
+    echo "CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}"
+    
+    mkdir -p ${PFIRE_VER_BUILD_DIR}
+    mkdir -p ${PFIRE_VER_INSTALL_PREFIX}
+     
+    cd ${PFIRE_VER_BUILD_DIR}  && cmake  -DBUILD_TESTS=0 \
+                                       -DPETSC_EXECUTABLE_RUNS:BOOL=Yes  -DENABLE_OpenImageIO=1 -DENABLE_DCMTK=1 \
+                                       -G"Eclipse CDT4 - Unix Makefiles" \
+                                       -DCMAKE_INSTALL_PREFIX=${PFIRE_VER_INSTALL_PREFIX} ${PFIRE_SOURCE} && 
+    
+    
+    #make -j  && make install && \
+    #ctest -V -L serial     
      
     # Add pFIRE filename version suffix
     #DEBUG cp ${PFIRE_DEST_DIR}/bin/pfire ${PFIRE_DEST_DIR}/bin/pfire_${PFIRE_VERSION}
     
-	PFIRE_MASTER_BIN_PATH="${PFIRE_DEST_DIR}/bin/"
-	
-	echo "PFIRE_MASTER_BIN_PATH=${PFIRE_MASTER_BIN_PATH}"
+	#PFIRE_MASTER_BIN_PATH="${PFIRE_DEST_DIR}/bin/"
+	#echo "PFIRE_MASTER_BIN_PATH=${PFIRE_MASTER_BIN_PATH}"
 
 	
 	# Add to container env
-	echo "export PATH=${PFIRE_MASTER_BIN_PATH}:${PATH}" >> $SINGULARITY_ENVIRONMENT
+	echo "export PATH=${PFIRE_DEST_DIR}/bin/:${PATH}" >> $SINGULARITY_ENVIRONMENT
 	
 	# Set library path
-	echo "export LD_LIBRARY_PATH=${PFIRE_DEST_DIR}/lib/:\${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
+	echo "export LD_LIBRARY_PATH=${PFIRE_DEST_DIR}/lib/:${PFIRE_DEST_DIR}/lib64:\${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
+	
 		
+	ll ${PFIRE_VER_INSTALL_PREFIX}
     
- 
-
-
-    ###########################################################################
+    ######################################################################################
     # Create Python virtual environment and install dependencies
     
 	# python3 -m venv pyvenv3
@@ -246,14 +346,17 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
 
     ###########################################################################
     # Install regression benchmark from pFIRE Master
-    # PFIRE_PATH    
+    # Benchmarks have been implemented only for this version and this inconsistency will be solved
+    # at the end of the refactoring process.
+    
+    # PFIRE_VER_INSTALL_PREFIX    
     cd ${SANDBOX}
 
     # FIXME revert to pfire repo flannel 
+ 
     #git clone https://github.com/insigneo-pfire/flannel.git flannel_local
     pip3 install git+https://github.com/insigneo-pfire/flannel.git
  
-
     BENCHMARKS_VERSION="master"
     #### testing
     git clone -b ${BENCHMARKS_VERSION}  ${PFIRE_REPOSITORY} ${BENCHMARKS_VERSION}
@@ -265,8 +368,7 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
     
     BENCHMARKS_PATH="${PFIRE_SOURCE_MASTER}/benchmarking/"
     cd ${PFIRE_SOURCE_MASTER}
- 
-	
+ 	
 	# Install pfire-benchmarking
     # python3 setup.py install 
     
@@ -321,7 +423,7 @@ From: base_openmpi_petsc_dcmtk_oiio_for_pfire.sif
 
 	# export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${HDF5_ROOT}/lib:${PETSC_DIR}/${PETSC_ARCH}/lib	
 	# export CPATH_PATH=$CPATH:${HDF5_ROOT}/include:a${PETSC_DIR}/${PETSC_ARCH}/include
-	# export PATH=$PATH:${PFIRE_PATH}
+	# export PATH=$PATH:${PFIRE_VER_INSTALL_PREFIX}
 
 	# echo "before exporting in environment PETSC_DIR=${PETSC_DIR}"
 	# export PETSC_DIR=${PETSC_DIR}
