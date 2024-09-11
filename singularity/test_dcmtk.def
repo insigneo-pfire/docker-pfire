@@ -1,0 +1,189 @@
+#base_openmpi_petsc_dcmtk_oiio_for_pfire.def
+#Bootstrap: library
+Bootstrap: localimage
+From: base_openmpi_petsc_for_pfire.sif 
+#From: base_centos8_openmpi_for_pfire.sif
+
+%environment
+
+%post    
+    
+    ###################################################	  
+		
+
+    # to install dependency packages only use: yum repoquery --requires OpenImageIO
+
+
+ 	
+
+
+	
+ ####################################  
+ # DCMTK
+
+    # danielta debug echo "export CPATH=/usr/lib/gcc/x86_64-redhat-linux/8/include::/usr/include/c++/8:/usr/include/:/usr/include:${CPATH}"   >> SINGULARITY_ENVIRONMENT
+    # danielta debug echo "LIBRARY_LD_PATH=.singularity.d/libs:usr/lib64/:/usr/lib/gcc/x86_64-redhat-linux/8/:\${LD_LIBRARY_PATH}"             >> SINGULARITY_ENVIRONMENT   
+
+    SANDBOX=/tmp/sandbox_oiio/ 
+    cd ${SANDBOX}
+    rm -rf dcmtk
+    export DCMTK_SRC=${SANDBOX}/dcmtk
+    export DCMTK_BUILD=${SANDBOX}/dcmtk_build
+    
+    git clone --depth=1 --branch DCMTK-3.6.6 https://github.com/DCMTK/dcmtk.git
+   
+    export DEST_DCMTK=/usr/local/DCMTK/
+    export DEST_DCMTK_single=$DEST_DCMTK/single_lib
+    export DEST_DCMTK_static=$DEST_DCMTK/static
+    export DEST_DCMTK_shared=$DEST_DCMTK/shared
+    
+    mkdir -p $DEST_DCMTK
+    mkdir -p $DEST_DCMTK_single
+    mkdir -p $DEST_DCMTK_static
+    mkdir -p $DEST_DCMTK_shared
+    
+    mkdir -p $DCMTK_BUILD
+    cd       ${DCMTK_BUILD}
+          
+    #cmake ../dcmtk -DCMAKE_INSTALL_PREFIX=`pwd`/dest_dcmtk  -DBUILD_SINGLE_SHARED_LIBRARY=1 -DDCMTK_PORTABLE_LINUX_BINARIES=1
+    
+     
+    #export DEST_DCMTK=/usr/local/DCMTK/shared_single
+    
+    #cmake ../dcmtk -DBUILD_SHARED_LIBS=1   -DDCMTK_PORTABLE_LINUX_BINARIES=1 -DCMAKE_POSITION_INDEPENDENT_CODE=1 -DDCMTK_LINK_STATIC=0 -DCMAKE_INSTALL_PREFIX=$DEST_DCMTK
+    #cmake ../dcmtk -DBUILD_SHARED_LIBS=1   -DDCMTK_PORTABLE_LINUX_BINARIES=1  -DCMAKE_CXX_FLAGS=“-fPIC” -DCMAKE_C_FLAGS=“-fPIC” -DDCMTK_LINK_STATIC=0 -DCMAKE_INSTALL_PREFIX=$DEST_DCMTK
+
+	
+    #--------------------------------------------------------------------------
+    # Build all dcmtk in a single library
+    #--------------------------------------------------------------------------
+    
+    rm -rf   ${DCMTK_BUILD}
+    mkdir -p ${DCMTK_BUILD}
+    cd       ${DCMTK_BUILD}
+    
+    cmake  ${DCMTK_SRC}  -DBUILD_SHARED_LIBS=1 -DBUILD_SINGLE_SHARED_LIBRARY=1 \
+    		-DCMAKE_CXX_FLAGS=-fPIC -DCMAKE_C_FLAGS=-fPIC \
+    		-DCMAKE_INSTALL_PREFIX=$DEST_DCMTK_single
+
+    make -j 
+    make install
+	
+    ls -lrat $DEST_DCMTK_single
+	
+	
+    export DCMTK_DIR=$DEST_DCMTK_single/lib64/cmake/dcmtk/
+        
+    echo "export LD_LIBRARY_PATH=${DEST_DCMTK_single}/lib/:${DEST_DCMTK_single}/lib64/:\${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
+    echo "export DCMTK_DIR=${DCMTK_DIR}" 						>> $SINGULARITY_ENVIRONMENT
+    echo "export CPATH=${DEST_DCMTK_single}/include/:${CPATH}"  >> $SINGULARITY_ENVIRONMENT
+	
+    # BUILD_SHARED_LIBS 	 DCMTK_LINK_STATIC  	 DCMTK_PORTABLE_LINUX_BINARIES 	  BUILD_SINGLE_SHARED_LIBRARY BUILD_SHARED_LIBS
+    # -DBUILD_SHARED_LIBS=1   -DDCMTK_PORTABLE_LINUX_BINARIES=1  -DCMAKE_CXX_FLAGS=“-fPIC” -DCMAKE_C_FLAGS=“-fPIC” -DDCMTK_LINK_STATIC=0 -DCMAKE_INSTALL_PREFIX=
+
+    env
+    echo ${OpenImageIO_ROOT}
+    echo ${OpenImageIO_DIR}	
+    echo ${DCMTK_DIR}
+
+    #-------------------------------------------------------------------------- 
+    # Build static libraries
+    #--------------------------------------------------------------------------
+	
+    rm -rf   ${DCMTK_BUILD}
+    mkdir -p ${DCMTK_BUILD}
+    cd       ${DCMTK_BUILD}
+	
+    cmake  ${DCMTK_SRC}  -DBUILD_SHARED_LIBS=0  -DCMAKE_INSTALL_PREFIX=$DEST_DCMTK_static
+    
+	# DEBUG make -j 
+	# DEBUG make install
+	
+	ls -lrat $DEST_DCMTK_static
+	
+	# Set environment variables	   
+	# echo "export LD_LIBRARY_PATH=${DEST_DCMTK_static}/lib/:${DEST_DCMTK_staic}/lib64/:${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
+	# echo "export DCMTK_DIR=${DCMTK_DIR_static}" 			   >> $SINGULARITY_ENVIRONMENT
+	# echo "export CPATH=${DEST_DCMTK_static}/include/:${CPATH}" >> $SINGULARITY_ENVIRONMENT
+    
+		
+	#-------------------------------------------------------------------------- 
+	# Build shared libraries
+	#--------------------------------------------------------------------------
+	
+	cd ${SANDBOX}
+	
+	rm -rf   ${DCMTK_BUILD}
+    mkdir -p ${DCMTK_BUILD}
+    cd       ${DCMTK_BUILD}
+    
+    cmake  ${DCMTK_SRC}  -DBUILD_SHARED_LIBS=1  -DCMAKE_INSTALL_PREFIX=$DEST_DCMTK_shared
+    
+	make -j 
+	make install
+	
+	ls -lrat $DEST_DCMTK_shared
+	    
+	# echo "export LD_LIBRARY_PATH=${DEST_DCMTK_shared}/lib/:${DEST_DCMTK_shared}/lib64/:${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
+	# echo "export DCMTK_DIR=${DCMTK_DIR_shared}" >> $SINGULARITY_ENVIRONMENT
+	# echo "export CPATH=${DEST_DCMTK_shared}/include/:${CPATH}" >> $SINGULARITY_ENVIRONMENT
+    
+	
+	
+		
+	
+	###########################################################################  
+	## DCMTK OLD To remove 
+	# cd ${SANDBOX}
+    # echo "export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/.singularity.d/libs:usr/lib64/:/usr/lib/gcc/x86_64-redhat-linux/8/" >> SINGULARITY_ENVIRONMENT
+    # echo "export CPATH=/usr/lib/gcc/x86_64-redhat-linux/8/include::/usr/include/c++/8:/usr/include/:/usr/include" 	   >> SINGULARITY_ENVIRONMENT
+    
+    # git clone https://github.com/DCMTK/dcmtk.git
+   
+    # export DEST_DCMTK=/usr/local/DCMTK/
+    # mkdir dcmtk_build
+    # cd     dcmtk_build
+    
+	# cmake ../dcmtk -DCMAKE_INSTALL_PREFIX=$DEST_DCMTK -DDCMTK_PORTABLE_LINUX_BINARIES=1  -DBUILD_SINGLE_SHARED_LIBRARY=1 #-DCMAKE_PREFIX_PATH=/usr/local/oiio/ 
+	 ##/home/tartarini/DEVELOP/INSIGNEO/insigneo-pfire/docker-pfire/singularity/fix_oiio_dcmtk/dcmtk
+
+	# debug danielta dec make -j 
+	# debug danielta dec make install
+	
+	# export DCMTK_DIR=$DEST_DCMTK/lib64/cmake/dcmtk/
+    # LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$DEST_DCMTK/lib64
+    
+	#echo "export LD_LIBRARY_PATH=${DEST_DCMTK}/lib/:${DEST_DCMTK}/lib64/:${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT
+	#echo "export DCMTK_DIR=${DCMTK_DIR}" >> $SINGULARITY_ENVIRONMENT
+	#echo "export CPATH=${DEST_DCMTK}/include/:${CPATH}" >> $SINGULARITY_ENVIRONMENT
+	
+	# #BUILD_SHARED_LIBS 	 DCMTK_LINK_STATIC  	 DCMTK_PORTABLE_LINUX_BINARIES 	  BUILD_SINGLE_SHARED_LIBRARY BUILD_SHARED_LIBS
+	 
+	###########################################################################
+	
+    ###################
+    # Install XDMF
+    ###################
+    
+    # cd ${SANDBOX}
+    
+    # git clone https://github.com/DCMTK/dcmtk.git
+   
+    # export DEST_DCMTK=/usr/local/DCMTK/
+    	
+    # XDMF_INSTALL_DIR="${DEST_DCMTK}"
+    
+    # wget https://gitlab.kitware.com/xdmf/xdmf/-/archive/master/xdmf-master.tar.gz
+    # tar -zxvf xdmf-master.tar.gz
+    # cd xdmf-master
+	# mkdir build ; cd build
+	# cmake .. -DCMAKE_INSTALL_PREFIX=${XDMF_INSTALL_DIR} -DBUILD_SHARED_LIBS=1 -DXDMF_WRAP_PYTHON=1 -Wno-dev -DPYTHON_INCLUDE_DIR=$(python -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())")
+	# #-DPYTHON_INCLUDE_DIR=$(python -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())")  -DPYTHON_LIBRARY=$(python -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))")
+	# make -j 	
+	# #echo "export XDMF_ROOT=${XDMF_INSTALL_DIR}" >> $SINGULARITY_ENVIRONMENT
+	# echo "export LD_LIBRARY_PATH=${XDMF_INSTALL_DIR}/lib/:${XDMF_INSTALL_DIR}/lib64/:${LD_LIBRARY_PATH}" >> $SINGULARITY_ENVIRONMENT	
+	# echo "export CPATH=${XDMF_INSTALL_DIR}/include/:${CPATH}" >> $SINGULARITY_ENVIRONMENT
+	# echo "export XDMF_ROOT=${XDMF_INSTALL_DIR}" >> $SINGULARITY_ENVIRONMENT
+	 
+	###########################################################################	
+	
